@@ -17,7 +17,8 @@ input {
 .app {
   align-items: center !important;
   align-content: center !important;
-  width: 65%;
+  /* width: 65%; */
+  width: 100%;
   margin: 0 auto;
   min-height: 100vh;
   background:
@@ -188,7 +189,8 @@ input {
   max-width: 1240px;
   margin: 0 auto;
   padding: 0 24px 72px;
-} 
+}
+
 .filterCard {
   margin-top: 10px;
   padding: 26px;
@@ -265,7 +267,7 @@ input {
 .vehicleCard {
   display: grid;
   grid-template-columns: 430px 1fr;
-  overflow: hidden;
+  /* overflow: hidden; */
   border-radius: 34px;
   background: #ffffff;
   border: 1px solid #ececec;
@@ -494,11 +496,15 @@ input {
 .locationTableWrap {
   padding: 0 18px 18px;
   overflow-x: auto;
+  overflow-x: auto;
 }
 
 .locationTableWrap table {
-  width: 100%;
-  min-width: 620px;
+  /* width: 100%; */
+  /* min-width: 620px; */
+  /* border-collapse: collapse; */
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
 }
 
@@ -711,6 +717,10 @@ input {
 }
 
 @media (max-width: 620px) {
+  .app {
+    width: 100%;
+  }
+
   .hero,
   .mainWrap {
     padding-left: 16px;
