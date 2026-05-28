@@ -1,13 +1,19 @@
+// src/pages/RoadshowQO.tsx
 /* eslint-disable */
 // @ts-nocheck
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./RoadshowQO.css";
-import { useNavigate } from "react-router-dom";
-
+import { Link } from "react-router-dom";
 const LOGO_SRC = "/adinn-logo.png";
 
 const VEHICLES_JSON_URL =
   "https://adinn-space.sgp1.cdn.digitaloceanspaces.com/roadshowRateCard/vehicles.json";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+
+const ROADSHOW_QUOTATION_API_URL = `${API_BASE_URL}/api/roadshow-quotations`;
 
 const CATEGORY_ORDER = ["Flex Branding", "Hybrid LED + Flex", "LED Vehicles"];
 
@@ -118,6 +124,7 @@ type JsPdfInstance = {
   addImage: (...args: unknown[]) => void;
   addPage: (...args: unknown[]) => void;
   save: (fileName: string) => void;
+  output: (type: "blob") => Blob;
 };
 
 type JsPdfConstructor = new (options: Record<string, unknown>) => JsPdfInstance;
@@ -190,7 +197,8 @@ const readFileAsDataUrl = (file: File) => {
       reject(new Error("Unable to read the selected image."));
     };
 
-    reader.onerror = () => reject(new Error("Unable to read the selected image."));
+    reader.onerror = () =>
+      reject(new Error("Unable to read the selected image."));
     reader.readAsDataURL(file);
   });
 };
@@ -238,6 +246,7 @@ const normalizeImageFileToDataUrl = async (file: File) => {
   const dataUrl = await readFileAsDataUrl(file);
   const image = await loadImageElement(dataUrl);
   const canvas = document.createElement("canvas");
+
   canvas.width = image.naturalWidth;
   canvas.height = image.naturalHeight;
 
@@ -248,6 +257,7 @@ const normalizeImageFileToDataUrl = async (file: File) => {
   }
 
   context.drawImage(image, 0, 0);
+
   return canvasToPngDataUrl(canvas);
 };
 
@@ -412,6 +422,7 @@ const loadExternalScript = (src: string, id: string) => {
     }
 
     const script = document.createElement("script");
+
     script.id = id;
     script.src = src;
     script.async = true;
@@ -467,21 +478,85 @@ const getQuotationPdfFileName = (proposalNumber: string, companyName: string) =>
   return `${companyPart}-${proposalPart}.pdf`;
 };
 
+const getNextRoadshowQuotationNumber = async () => {
+  const response = await fetch(`${ROADSHOW_QUOTATION_API_URL}/next-number`, {
+    method: "GET",
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "Unable to get next quotation number.");
+  }
+
+  return result.data;
+};
+
+const createRoadshowQuotation = async (payload: Record<string, unknown>) => {
+  const response = await fetch(ROADSHOW_QUOTATION_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "Unable to save quotation details.");
+  }
+
+  return result.data;
+};
+
+const uploadRoadshowQuotationPdf = async ({
+  quotationId,
+  pdfBlob,
+  fileName,
+}: {
+  quotationId: string;
+  pdfBlob: Blob;
+  fileName: string;
+}) => {
+  const formData = new FormData();
+
+  formData.append("pdf", pdfBlob, fileName);
+  formData.append("fileName", fileName);
+
+  const response = await fetch(
+    `${ROADSHOW_QUOTATION_API_URL}/${quotationId}/pdf`,
+    {
+      method: "PUT",
+      body: formData,
+    },
+  );
+
+  const result = await response.json();
+
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "Unable to upload quotation PDF.");
+  }
+
+  return result.data;
+};
+
+const triggerBlobDownload = (blob: Blob, fileName: string) => {
+  const blobUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = blobUrl;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(blobUrl);
+  }, 1000);
+};
+
 export default function RoadshowQO() {
-  const navigate = useNavigate();
-
-//   const copyAndNavigate = async () => {
-//     await navigator.clipboard.writeText(window.location.href);
-//     navigate("/roadshowQO");
-//   };
-// // CORRECT - with async
-// useEffect(() => {
-//   const copyUrl = async () => {
-//     await navigator.clipboard.writeText(window.location.href);
-//   };
-//   copyUrl();
-// }, []);
-
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
   const [vehiclesError, setVehiclesError] = useState("");
@@ -537,13 +612,46 @@ export default function RoadshowQO() {
   const [isPdfMode, setIsPdfMode] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfError, setPdfError] = useState("");
-  const [proposalDate] = useState(() => new Date());
+  const [nextQuotationMeta, setNextQuotationMeta] = useState<{
+    quotationDate: string;
+    quotationDateKey: string;
+    nextSequence: number;
+    nextQuotationNumber: string;
+  } | null>(null);
+
+  const [activeQuotationMeta, setActiveQuotationMeta] = useState<{
+    quotationId: string;
+    quotationNumber: string;
+  } | null>(null);
+
+  const [proposalDate, setProposalDate] = useState(() => new Date());
+
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const signatureInputRef = useRef<HTMLInputElement | null>(null);
   const signatureCropImageFrameRef = useRef<HTMLDivElement | null>(null);
   const signatureCropStartRef = useRef<Pick<CropSelection, "x" | "y"> | null>(
     null,
   );
+
+  const displayLogo = uploadedLogo || LOGO_SRC;
+
+  const fetchNextQuotationNumber = async () => {
+    try {
+      const nextQuotation = await getNextRoadshowQuotationNumber();
+      setNextQuotationMeta(nextQuotation);
+    } catch (error) {
+      console.error(error);
+      setPdfError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load next quotation number.",
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchNextQuotationNumber();
+  }, []);
 
   useEffect(() => {
     const loadVehicles = async () => {
@@ -552,8 +660,6 @@ export default function RoadshowQO() {
         setVehiclesError("");
 
         const response = await fetch(`${VEHICLES_JSON_URL}?v=${Date.now()}`, {
-        // const response = await fetch(`./vehicles_live.json?v=${Date.now()}`, {
-
           cache: "no-store",
         });
 
@@ -595,6 +701,7 @@ export default function RoadshowQO() {
     const ordered = CATEGORY_ORDER.filter((category) =>
       normalized.has(category),
     );
+
     const extras = Array.from(normalized).filter(
       (category) => !CATEGORY_ORDER.includes(category),
     );
@@ -612,11 +719,16 @@ export default function RoadshowQO() {
     return vehicles.find((vehicle) => String(vehicle.id) === selectedVehicleId);
   }, [vehicles, selectedVehicleId]);
 
-  const proposalNumber = useMemo(() => {
+  const draftProposalNumber = useMemo(() => {
     const dateKey = proposalDate.toISOString().slice(0, 10).replace(/-/g, "");
     const vehicleKey = selectedVehicleId || "NEW";
-    return `ADN-RS-${dateKey}-${vehicleKey}`;
+    return `ADINN-RS-${dateKey}-${vehicleKey}`;
   }, [proposalDate, selectedVehicleId]);
+
+  const proposalNumber =
+    activeQuotationMeta?.quotationNumber ||
+    nextQuotationMeta?.nextQuotationNumber ||
+    draftProposalNumber;
 
   const validUntilDate = useMemo(() => {
     return addDays(proposalDate, COMPANY_DETAILS.validityDays);
@@ -630,6 +742,7 @@ export default function RoadshowQO() {
     setPricingDetails(nextPricing);
     setKmLimit(60);
     setMinimumDays(10);
+    setActiveQuotationMeta(null);
   }, [selectedVehicle, region]);
 
   useEffect(() => {
@@ -647,8 +760,6 @@ export default function RoadshowQO() {
   }, [days]);
 
   const quoteLineItems = useMemo<QuoteLineItem[]>(() => {
-    // const rtoMonthRawValue = days / RTO_PERMISSION_VALIDITY_DAYS;
-    // const rtoMonthText = rtoMonthRawValue.toFixed(2);
     const effectivePowerBackupRate =
       includeLed55 && pricingDetails.powerBackup <= 0
         ? POWER_BACKUP_ADDON_RATE_PER_DAY
@@ -669,7 +780,7 @@ export default function RoadshowQO() {
         description: `${getRegionLabel(region)} vehicle branding production and application support`,
         rateLabel: `${formatPrice(pricingDetails.brandingCost)} / vehicle`,
         periodLabel: "One-time",
-        quantityLabel: `${quantity} `,
+        quantityLabel: `${quantity}`,
         formulaLabel: `${formatPrice(pricingDetails.brandingCost)} × ${quantity} vehicle(s)`,
         amount: pricingDetails.brandingCost * quantity,
       },
@@ -714,7 +825,7 @@ export default function RoadshowQO() {
         description: '43" LED TV add-on for campaign display',
         rateLabel: `${formatPrice(pricingDetails.ledCost)} / day`,
         periodLabel: `${days} day(s)`,
-        quantityLabel: `${quantity} `,
+        quantityLabel: `${quantity}`,
         formulaLabel: `${formatPrice(pricingDetails.ledCost)} × ${days} day(s) × ${quantity} unit(s)`,
         amount: pricingDetails.ledCost * quantity * days,
       });
@@ -726,7 +837,7 @@ export default function RoadshowQO() {
         description: '55" LED TV add-on for premium campaign display',
         rateLabel: `${formatPrice(pricingDetails.led55Cost)} / day`,
         periodLabel: `${days} day(s)`,
-        quantityLabel: `${quantity} `,
+        quantityLabel: `${quantity}`,
         formulaLabel: `${formatPrice(pricingDetails.led55Cost)} × ${days} day(s) × ${quantity} unit(s)`,
         amount: pricingDetails.led55Cost * quantity * days,
       });
@@ -771,19 +882,6 @@ export default function RoadshowQO() {
 
   const grandTotal = subtotal + gstAmount;
 
-  // const includedServices = useMemo(() => {
-  //   const baseIncluded = selectedVehicle?.included?.length
-  //     ? selectedVehicle.included
-  //     : [
-  //         "Vehicle rent",
-  //         "Driver bata, food and accommodation",
-  //         `Fuel within ${kmLimit} km/day`,
-  //         "Basic campaign movement",
-  //       ];
-
-  //   return Array.from(new Set(baseIncluded));
-  // }, [selectedVehicle, kmLimit]);
-
   const selectedAddOns = useMemo(() => {
     const addOns: string[] = [];
 
@@ -814,7 +912,14 @@ export default function RoadshowQO() {
     promoterQuantity,
   ]);
 
+  const isCompactProposal = quoteLineItems.length >= 6;
+
+  const clearSavedQuotation = () => {
+    setActiveQuotationMeta(null);
+  };
+
   const handleCategorySelect = (category: string) => {
+    clearSavedQuotation();
     setSelectedCategory(category);
 
     const firstVehicle = vehicles.find(
@@ -827,6 +932,8 @@ export default function RoadshowQO() {
   };
 
   const handleClientChange = (field: keyof ClientDetails, value: string) => {
+    clearSavedQuotation();
+
     setClientDetails((current) => ({
       ...current,
       [field]: value,
@@ -837,6 +944,8 @@ export default function RoadshowQO() {
     field: keyof PreparedByDetails,
     value: string,
   ) => {
+    clearSavedQuotation();
+
     setPreparedByDetails((current) => ({
       ...current,
       [field]: value,
@@ -844,6 +953,8 @@ export default function RoadshowQO() {
   };
 
   const handlePricingChange = (field: keyof PricingDetails, value: string) => {
+    clearSavedQuotation();
+
     const numericValue = Number(value);
     const safeValue = Number.isFinite(numericValue) ? numericValue : 0;
     const nextValue =
@@ -858,6 +969,7 @@ export default function RoadshowQO() {
   };
 
   const handleResetPricing = () => {
+    clearSavedQuotation();
     setPricingDetails(getDefaultPricing(selectedVehicle, region));
     setIncludePromoter(false);
     setIncludeLed(false);
@@ -867,6 +979,7 @@ export default function RoadshowQO() {
   };
 
   const handleLedToggle = (checked: boolean) => {
+    clearSavedQuotation();
     setIncludeLed(checked);
 
     if (checked) {
@@ -878,6 +991,7 @@ export default function RoadshowQO() {
   };
 
   const handleLed55Toggle = (checked: boolean) => {
+    clearSavedQuotation();
     setIncludeLed55(checked);
 
     if (checked) {
@@ -897,6 +1011,8 @@ export default function RoadshowQO() {
   };
 
   const handlePowerBackupToggle = (checked: boolean) => {
+    clearSavedQuotation();
+
     if (includeLed55 && !checked) {
       setIncludePowerBackup(true);
       return;
@@ -916,6 +1032,8 @@ export default function RoadshowQO() {
   };
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    clearSavedQuotation();
+
     const file = event.target.files?.[0];
 
     if (!file) return;
@@ -943,14 +1061,18 @@ export default function RoadshowQO() {
   ) => {
     if (!signatureSource) return;
 
+    clearSavedQuotation();
+
     const point = getSignatureCropPoint(event);
     signatureCropStartRef.current = point;
+
     setSignatureCrop({
       x: point.x,
       y: point.y,
       width: 0,
       height: 0,
     });
+
     setSignatureCropMessage("");
     setIsSelectingSignatureCrop(true);
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -997,6 +1119,8 @@ export default function RoadshowQO() {
   const handleSignatureUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
+    clearSavedQuotation();
+
     const file = event.target.files?.[0];
 
     if (!file) return;
@@ -1027,6 +1151,8 @@ export default function RoadshowQO() {
   const handleApplySignatureCrop = async () => {
     if (!signatureSource) return;
 
+    clearSavedQuotation();
+
     if (
       signatureCrop.width < MIN_SIGNATURE_CROP_SIZE ||
       signatureCrop.height < MIN_SIGNATURE_CROP_SIZE
@@ -1051,6 +1177,7 @@ export default function RoadshowQO() {
       );
 
       const canvas = document.createElement("canvas");
+
       canvas.width = sourceWidth;
       canvas.height = sourceHeight;
 
@@ -1087,6 +1214,7 @@ export default function RoadshowQO() {
   };
 
   const handleRemoveSignature = () => {
+    clearSavedQuotation();
     setSignatureSource("");
     setUploadedSignature("");
     setSignatureCrop(DEFAULT_SIGNATURE_CROP);
@@ -1095,6 +1223,182 @@ export default function RoadshowQO() {
     if (signatureInputRef.current) {
       signatureInputRef.current.value = "";
     }
+  };
+
+  const buildRoadshowQuotationPayload = () => {
+    return {
+      payloadVersion: "roadshow-quotation-v1",
+      source: "roadshow_quotation_generator",
+      quotationType: "roadshow_campaign",
+
+      company: {
+        name: COMPANY_DETAILS.name,
+        title: COMPANY_DETAILS.title,
+        validityDays: COMPANY_DETAILS.validityDays,
+        defaultLogoSrc: LOGO_SRC,
+        displayLogoSrc: displayLogo,
+      },
+
+      quotation: {
+        draftProposalNumber,
+        displayedProposalNumber: proposalNumber,
+        proposalDate: proposalDate.toISOString(),
+        proposalDateDisplay: formatDate(proposalDate),
+        validUntilDate: validUntilDate.toISOString(),
+        validUntilDateDisplay: formatDate(validUntilDate),
+        validityDays: COMPANY_DETAILS.validityDays,
+      },
+
+      clientDetails: {
+        ...clientDetails,
+      },
+
+      preparedByDetails: {
+        ...preparedByDetails,
+        staff: {
+          name: preparedByDetails.staffName,
+          phoneNumber: preparedByDetails.staffPhone,
+        },
+      },
+
+      campaign: {
+        campaignName: clientDetails.campaignName,
+        campaignLocation: clientDetails.campaignLocation,
+        region,
+        regionLabel: getRegionLabel(region),
+        selectedCategory,
+        selectedVehicleId,
+        quantity,
+        promoterQuantity,
+        days,
+        kmLimit,
+        minimumDays,
+        gstPercent,
+        rtoPermissionValidityDays: RTO_PERMISSION_VALIDITY_DAYS,
+        rtoBillingMonths,
+      },
+
+      vehicle: {
+        selectedCategory,
+        selectedVehicleId,
+        selectedVehicleSnapshot: selectedVehicle
+          ? {
+              ...selectedVehicle,
+              normalizedCategory: normalizeCategory(selectedVehicle.category),
+            }
+          : null,
+      },
+
+      pricing: {
+        currency: "INR",
+        pricingDetails: {
+          ...pricingDetails,
+        },
+        quoteLineItems: quoteLineItems.map((item, index) => ({
+          serialNumber: index + 1,
+          ...item,
+        })),
+        subtotal,
+        gstPercent,
+        gstAmount,
+        grandTotal,
+        advancePercent: 50,
+        advanceAmount: grandTotal * 0.5,
+      },
+
+      addOns: {
+        includePromoter,
+        includeLed,
+        includeLed55,
+        includePowerBackup: includePowerBackup || includeLed55,
+        selectedAddOns,
+      },
+
+   assets: {
+  logo: {
+    isCustomLogoUploaded: Boolean(uploadedLogo),
+    defaultLogoSrc: LOGO_SRC,
+    displayLogoSrc: uploadedLogo ? "custom-logo-used-in-generated-pdf" : LOGO_SRC,
+  },
+  signature: {
+    hasSignature: Boolean(uploadedSignature),
+    signatureCrop,
+    signatureDataUrl: "",
+  },
+},
+      termsAndConditions: TERMS_AND_CONDITIONS,
+    };
+  };
+
+  const resetQuotationForm = async () => {
+    const firstVehicle = vehicles[0];
+    const defaultRegion: RegionKey = "chennai";
+    const nextProposalDate = new Date();
+
+    setProposalDate(nextProposalDate);
+
+    setClientDetails({
+      clientName: "",
+      companyName: "",
+      contactNumber: "",
+      email: "",
+      campaignName: "",
+      campaignLocation: "",
+    });
+
+    setPreparedByDetails({ ...PREPARED_BY_DEFAULTS });
+
+    setQuantity(1);
+    setPromoterQuantity(1);
+    setDays(10);
+    setKmLimit(60);
+    setMinimumDays(10);
+    setGstPercent(18);
+
+    setIncludePromoter(false);
+    setIncludeLed(false);
+    setIncludeLed55(false);
+    setIncludePowerBackup(false);
+
+    setUploadedLogo("");
+    setSignatureSource("");
+    setUploadedSignature("");
+    setSignatureCrop(DEFAULT_SIGNATURE_CROP);
+    setSignatureCropMessage("");
+    setIsSelectingSignatureCrop(false);
+
+    setActiveQuotationMeta(null);
+
+    if (firstVehicle) {
+      setSelectedCategory(normalizeCategory(firstVehicle.category));
+      setSelectedVehicleId(String(firstVehicle.id));
+      setRegion(defaultRegion);
+      setPricingDetails(getDefaultPricing(firstVehicle, defaultRegion));
+    } else {
+      setSelectedCategory("");
+      setSelectedVehicleId("");
+      setRegion(defaultRegion);
+      setPricingDetails({
+        vehicleRate: 0,
+        brandingCost: 0,
+        rtoPermission: 0,
+        promoterCost: 0,
+        ledCost: 0,
+        led55Cost: 0,
+        powerBackup: 0,
+        upDownCharge: 0,
+      });
+    }
+
+    if (logoInputRef.current) {
+      logoInputRef.current.value = "";
+    }
+
+    if (signatureInputRef.current) {
+      signatureInputRef.current.value = "";
+    }
+
+    await fetchNextQuotationNumber();
   };
 
   const prepareAndPrintProposal = async () => {
@@ -1110,23 +1414,40 @@ export default function RoadshowQO() {
   const handleDownloadPdf = async () => {
     if (isGeneratingPdf) return;
 
-    const pageElements = Array.from(
-      document.querySelectorAll<HTMLElement>(".printableArea .pdfPage"),
-    );
+    if (!clientDetails.companyName.trim()) {
+      setPdfError("Client company name is required before downloading PDF.");
+      return;
+    }
 
-    if (!pageElements.length) {
-      setPdfError("Unable to find the quotation pages for PDF download.");
+    if (
+      !preparedByDetails.staffName.trim() ||
+      !preparedByDetails.staffPhone.trim()
+    ) {
+      setPdfError(
+        "Prepared by staff name and phone number are required before downloading PDF.",
+      );
       return;
     }
 
     try {
       setPdfError("");
       setIsGeneratingPdf(true);
+
+      const savedQuotation = await createRoadshowQuotation(
+        buildRoadshowQuotationPayload(),
+      );
+
+      setActiveQuotationMeta({
+        quotationId: savedQuotation.quotationId,
+        quotationNumber: savedQuotation.quotationNumber,
+      });
+
       setIsPdfMode(true);
       document.body.classList.add("pdfExporting");
 
       await waitForNextPaint();
       await waitForImagesToLoad(".printableArea img");
+
       await (
         document as Document & {
           fonts?: {
@@ -1134,6 +1455,14 @@ export default function RoadshowQO() {
           };
         }
       ).fonts?.ready?.catch(() => undefined);
+
+      const pageElements = Array.from(
+        document.querySelectorAll<HTMLElement>(".printableArea .pdfPage"),
+      );
+
+      if (!pageElements.length) {
+        throw new Error("Unable to find the quotation pages for PDF download.");
+      }
 
       const { html2canvas, jsPDF } = await loadPdfLibraries();
 
@@ -1170,13 +1499,29 @@ export default function RoadshowQO() {
         pdf.addImage(imageData, "PNG", 0, 0, 210, 297);
       }
 
-      pdf.save(getQuotationPdfFileName(proposalNumber, clientDetails.companyName));
+      const fileName = getQuotationPdfFileName(
+        savedQuotation.quotationNumber,
+        clientDetails.companyName,
+      );
+
+      const pdfBlob = pdf.output("blob");
+
+      await uploadRoadshowQuotationPdf({
+        quotationId: savedQuotation.quotationId,
+        pdfBlob,
+        fileName,
+      });
+
+      triggerBlobDownload(pdfBlob, fileName);
+
+      await resetQuotationForm();
     } catch (error) {
       console.error(error);
+
       setPdfError(
         error instanceof Error
           ? `PDF download failed: ${error.message}`
-          : "PDF download failed. Please try Print A4 and choose Save as PDF.",
+          : "PDF download failed. Please try again.",
       );
     } finally {
       document.body.classList.remove("pdfExporting");
@@ -1199,12 +1544,6 @@ export default function RoadshowQO() {
     }
   };
 
-  const displayLogo = uploadedLogo || LOGO_SRC;
-  // Use the compact A4 layout only when the commercial table is actually dense.
-  // A signature alone should not shrink the full quotation, because that creates
-  // unnecessary empty space at the bottom of the preview/PDF.
-  const isCompactProposal = quoteLineItems.length >= 6;
-
   return (
     <div className={`qoPage ${isPdfMode ? "pdfMode" : ""}`}>
       <header className="qoHeader noPrint">
@@ -1221,9 +1560,9 @@ export default function RoadshowQO() {
           </div>
 
           <div className="qoHeaderActions">
-            <button type="button" onClick={() => logoInputRef.current?.click()}>
-              Upload Logo
-            </button>
+            <Link to="/roadshow-quotations" className="quotationListLink">
+  Show Quotations List
+</Link>
 
             <button
               type="button"
@@ -1269,8 +1608,9 @@ export default function RoadshowQO() {
                   <button
                     key={category}
                     type="button"
-                    className={`qoSelectCard ${selectedCategory === category ? "active" : ""
-                      }`}
+                    className={`qoSelectCard ${
+                      selectedCategory === category ? "active" : ""
+                    }`}
                     onClick={() => handleCategorySelect(category)}
                   >
                     <strong>{category}</strong>
@@ -1298,9 +1638,13 @@ export default function RoadshowQO() {
                   <button
                     key={vehicle.id}
                     type="button"
-                    className={`qoSelectCard ${selectedVehicleId === String(vehicle.id) ? "active" : ""
-                      }`}
-                    onClick={() => setSelectedVehicleId(String(vehicle.id))}
+                    className={`qoSelectCard ${
+                      selectedVehicleId === String(vehicle.id) ? "active" : ""
+                    }`}
+                    onClick={() => {
+                      clearSavedQuotation();
+                      setSelectedVehicleId(String(vehicle.id));
+                    }}
                   >
                     <strong>{vehicle.name}</strong>
                     <span>
@@ -1327,6 +1671,7 @@ export default function RoadshowQO() {
                   }
                 />
               </label>
+
               <label>
                 Client Name
                 <input
@@ -1553,9 +1898,10 @@ export default function RoadshowQO() {
                 Region
                 <select
                   value={region}
-                  onChange={(event) =>
-                    setRegion(event.target.value as RegionKey)
-                  }
+                  onChange={(event) => {
+                    clearSavedQuotation();
+                    setRegion(event.target.value as RegionKey);
+                  }}
                 >
                   <option value="chennai">Chennai</option>
                   <option value="rotn">ROTN</option>
@@ -1570,9 +1916,10 @@ export default function RoadshowQO() {
                   type="number"
                   min="1"
                   value={quantity}
-                  onChange={(event) =>
-                    setQuantity(clampNumber(event.target.value, 1))
-                  }
+                  onChange={(event) => {
+                    clearSavedQuotation();
+                    setQuantity(clampNumber(event.target.value, 1));
+                  }}
                 />
               </label>
 
@@ -1582,9 +1929,10 @@ export default function RoadshowQO() {
                   type="number"
                   min={minimumDays}
                   value={days}
-                  onChange={(event) =>
-                    setDays(clampNumber(event.target.value, minimumDays))
-                  }
+                  onChange={(event) => {
+                    clearSavedQuotation();
+                    setDays(clampNumber(event.target.value, minimumDays));
+                  }}
                 />
               </label>
 
@@ -1606,9 +1954,10 @@ export default function RoadshowQO() {
                   type="number"
                   min="0"
                   value={gstPercent}
-                  onChange={(event) =>
-                    setGstPercent(clampNumber(event.target.value, 0))
-                  }
+                  onChange={(event) => {
+                    clearSavedQuotation();
+                    setGstPercent(clampNumber(event.target.value, 0));
+                  }}
                 />
               </label>
             </div>
@@ -1781,7 +2130,10 @@ export default function RoadshowQO() {
                 <input
                   type="checkbox"
                   checked={includePromoter}
-                  onChange={(event) => setIncludePromoter(event.target.checked)}
+                  onChange={(event) => {
+                    clearSavedQuotation();
+                    setIncludePromoter(event.target.checked);
+                  }}
                 />
                 <span>
                   Include Promoter ({formatPrice(pricingDetails.promoterCost)}
@@ -1797,9 +2149,10 @@ export default function RoadshowQO() {
                       type="number"
                       min="1"
                       value={promoterQuantity}
-                      onChange={(event) =>
-                        setPromoterQuantity(clampNumber(event.target.value, 1))
-                      }
+                      onChange={(event) => {
+                        clearSavedQuotation();
+                        setPromoterQuantity(clampNumber(event.target.value, 1));
+                      }}
                     />
                   </label>
                 </div>
@@ -1869,7 +2222,11 @@ export default function RoadshowQO() {
 
         <aside className="qoPreviewColumn">
           <div
-            className={`proposalBook printableArea ${isCompactProposal ? "denseQuoteBook" : ""} ${uploadedSignature ? "hasSignatureQuote" : "noSignatureQuote"}`}
+            className={`proposalBook printableArea ${
+              isCompactProposal ? "denseQuoteBook" : ""
+            } ${
+              uploadedSignature ? "hasSignatureQuote" : "noSignatureQuote"
+            }`}
           >
             <section className="proposalDocument pdfPage quotePageOne">
               <header className="quoteTopBar">
@@ -1889,10 +2246,12 @@ export default function RoadshowQO() {
                     <span>Quotation No.</span>
                     <strong>{proposalNumber}</strong>
                   </div>
+
                   <div>
                     <span>Date</span>
                     <strong>{formatDate(proposalDate)}</strong>
                   </div>
+
                   <div>
                     <span>Valid Until</span>
                     <strong>{formatDate(validUntilDate)}</strong>
@@ -1930,30 +2289,37 @@ export default function RoadshowQO() {
                     <span>Campaign</span>
                     <strong>{clientDetails.campaignName || "-"}</strong>
                   </div>
+
                   <div>
                     <span>Location</span>
                     <strong>{clientDetails.campaignLocation || "-"}</strong>
                   </div>
+
                   <div>
                     <span>Region</span>
                     <strong>{getRegionLabel(region)}</strong>
                   </div>
+
                   <div>
                     <span>No. of Vehicles</span>
                     <strong>{quantity}</strong>
                   </div>
+
                   <div>
                     <span>Campaign Duration</span>
                     <strong>{days} days</strong>
                   </div>
+
                   <div>
                     <span>Daily KM Limit</span>
                     <strong>{kmLimit} km/day</strong>
                   </div>
+
                   <div>
                     <span>Minimum Booking</span>
                     <strong>{minimumDays} days</strong>
                   </div>
+
                   <div>
                     <span>Add-ons</span>
                     <strong>{selectedAddOns.join(", ")}</strong>
@@ -1968,8 +2334,9 @@ export default function RoadshowQO() {
                     <p>
                       {includeLed55
                         ? `55" LED TV requires power backup. Power Backup is added automatically at ${formatPrice(
-                          pricingDetails.powerBackup || POWER_BACKUP_ADDON_RATE_PER_DAY,
-                        )} / day and included in the total.`
+                            pricingDetails.powerBackup ||
+                              POWER_BACKUP_ADDON_RATE_PER_DAY,
+                          )} / day and included in the total.`
                         : "All values are in INR. Final booking is subject to vehicle availability."}
                     </p>
                   </div>
@@ -1996,6 +2363,7 @@ export default function RoadshowQO() {
                     {quoteLineItems.map((item, index) => (
                       <tr key={`${item.label}-${item.description}`}>
                         <td>{index + 1}</td>
+
                         <td>
                           <div className="quoteParticularBlock">
                             <strong className="quoteParticularName">
@@ -2006,6 +2374,7 @@ export default function RoadshowQO() {
                             </p>
                           </div>
                         </td>
+
                         <td>{item.rateLabel}</td>
                         <td>{item.periodLabel}</td>
                         <td>{item.quantityLabel}</td>
@@ -2019,10 +2388,12 @@ export default function RoadshowQO() {
                       <td colSpan={5}>Subtotal</td>
                       <td>{formatPrice(subtotal)}</td>
                     </tr>
+
                     <tr>
                       <td colSpan={5}>GST @ {gstPercent}%</td>
                       <td>{formatPrice(gstAmount)}</td>
                     </tr>
+
                     <tr className="quotationGrandRow">
                       <td colSpan={5}>Grand Total</td>
                       <td>{formatPrice(grandTotal)}</td>
@@ -2035,84 +2406,6 @@ export default function RoadshowQO() {
             </section>
 
             <section className="proposalDocument pdfPage quotePageTwo">
-              {/* <header className="quoteTopBar quoteTopBarSmall">
-                <div className="quoteBrandBlock">
-                  <div className="quoteLogoBox">
-                    <img src={displayLogo} alt="Adinn logo" />
-                  </div>
-
-                  <div>
-                    <p className="quoteCompanyName">{COMPANY_DETAILS.name}</p>
-                    <h1>Booking Assurance & Summary</h1>
-                  </div>
-                </div>
-
-                <div className="quoteMetaBox">
-                  <div>
-                    <span>Quotation No.</span>
-                    <strong>{proposalNumber}</strong>
-                  </div>
-                  <div>
-                    <span>Date</span>
-                    <strong>{formatDate(proposalDate)}</strong>
-                  </div>
-                  <div>
-                    <span>Valid Until</span>
-                    <strong>{formatDate(validUntilDate)}</strong>
-                  </div>
-                </div>
-              </header>
-
-              <section className="quoteSummaryPanel">
-                <div className="quoteSummaryIntro">
-                  <span>Quotation Summary</span>
-                  <h2>{selectedVehicle?.name || "Selected Vehicle"}</h2>
-                  <p>
-                    Campaign plan for {clientDetails.companyName || "the client"} in {getRegionLabel(region)}.
-                    This page keeps the booking terms, payment note and signatory cleanly separated from the commercial table.
-                  </p>
-                </div>
-
-                <div className="quoteSummaryGrid">
-                  <div>
-                    <span>Subtotal</span>
-                    <strong>{formatPrice(subtotal)}</strong>
-                  </div>
-                  <div>
-                    <span>GST @ {gstPercent}%</span>
-                    <strong>{formatPrice(gstAmount)}</strong>
-                  </div>
-                  <div className="quoteSummaryGrand">
-                    <span>Grand Total</span>
-                    <strong>{formatPrice(grandTotal)}</strong>
-                  </div>
-                  <div>
-                    <span>Advance Required</span>
-                    <strong>{formatPrice(grandTotal * 0.5)}</strong>
-                  </div>
-                </div>
-              </section>
-
-              <section className="quoteScopePanel">
-                <div className="quoteScopeColumn">
-                  <h3>Included Services</h3>
-                  <ul>
-                    {includedServices.map((service) => (
-                      <li key={service}>{service}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="quoteScopeColumn">
-                  <h3>Selected Add-ons</h3>
-                  <ul>
-                    {selectedAddOns.map((addOn) => (
-                      <li key={addOn}>{addOn}</li>
-                    ))}
-                  </ul>
-                </div>
-              </section> */}
-
               <section className="quoteTermsPanel">
                 <div className="quoteTermsHeader">
                   <div>
@@ -2139,8 +2432,9 @@ export default function RoadshowQO() {
               </section>
 
               <footer
-                className={`quoteFooter quotePremiumFooter ${uploadedSignature ? "hasSignature" : "noSignature"
-                  }`}
+                className={`quoteFooter quotePremiumFooter ${
+                  uploadedSignature ? "hasSignature" : "noSignature"
+                }`}
               >
                 <div className="quoteFooterNote">
                   <span>Thank you for choosing Adinn Roadshow.</span>
@@ -2159,9 +2453,11 @@ export default function RoadshowQO() {
                         alt="Digital signature"
                       />
                     </div>
+
                     <span>
                       For {preparedByDetails.companyName || COMPANY_DETAILS.name}
                     </span>
+
                     <strong>Authorised Signatory</strong>
                   </div>
                 )}
