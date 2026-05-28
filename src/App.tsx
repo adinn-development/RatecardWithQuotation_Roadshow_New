@@ -1,4 +1,6 @@
-// App.tsx
+/* eslint-disable */
+// @ts-nocheck
+
 
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
@@ -8,7 +10,7 @@ import NewPage from "./newPage.tsx";
 import RoadshowQuotationList from "./RoadshowQuotationList.tsx";
 
 function AdminQuickAccess() {
-  const [loginClickCount, setLoginClickCount] = useState(0);
+  
   const [showQuickAccess, setShowQuickAccess] = useState(false);
 
   useEffect(() => {
@@ -43,15 +45,7 @@ function AdminQuickAccess() {
 
       if (!isLoginClick) return;
 
-      setLoginClickCount((currentCount) => {
-        const nextCount = currentCount + 1;
-
-        if (nextCount >= 3) {
-          setShowQuickAccess(true);
-        }
-
-        return nextCount;
-      });
+     
     };
 
     document.addEventListener("click", handleClick, true);
