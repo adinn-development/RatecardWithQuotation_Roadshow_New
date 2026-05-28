@@ -30,12 +30,15 @@ const COMPANY_DETAILS = {
   validityDays: 7,
 };
 
+const DEFAULT_PREPARED_BY_ADDRESS =
+  "29,2A, Ground Floor, 1st Cross Street, Bypass Rd, Vanamamalai Nagar, Kalavasal, Madurai, Tamil Nadu 625010";
+
 const PREPARED_BY_DEFAULTS = {
   companyName: "Adinn Advertisment services Ltd",
   staffName: "",
   staffPhone: "",
   email: "",
-  address: "",
+  address: DEFAULT_PREPARED_BY_ADDRESS,
 };
 
 const TERMS_AND_CONDITIONS = [
@@ -1316,18 +1319,21 @@ export default function RoadshowQO() {
         selectedAddOns,
       },
 
-   assets: {
-  logo: {
-    isCustomLogoUploaded: Boolean(uploadedLogo),
-    defaultLogoSrc: LOGO_SRC,
-    displayLogoSrc: uploadedLogo ? "custom-logo-used-in-generated-pdf" : LOGO_SRC,
-  },
-  signature: {
-    hasSignature: Boolean(uploadedSignature),
-    signatureCrop,
-    signatureDataUrl: "",
-  },
-},
+      assets: {
+        logo: {
+          isCustomLogoUploaded: Boolean(uploadedLogo),
+          defaultLogoSrc: LOGO_SRC,
+          displayLogoSrc: uploadedLogo
+            ? "custom-logo-used-in-generated-pdf"
+            : LOGO_SRC,
+        },
+        signature: {
+          hasSignature: Boolean(uploadedSignature),
+          signatureCrop,
+          signatureDataUrl: "",
+        },
+      },
+
       termsAndConditions: TERMS_AND_CONDITIONS,
     };
   };
@@ -1563,8 +1569,8 @@ export default function RoadshowQO() {
 
           <div className="qoHeaderActions">
             <Link to="/roadshow-quotations" className="quotationListLink">
-  Show Quotations List
-</Link>
+              Show Quotations List
+            </Link>
 
             <button
               type="button"
@@ -2473,3 +2479,4 @@ export default function RoadshowQO() {
     </div>
   );
 }
+
