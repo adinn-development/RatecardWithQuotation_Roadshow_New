@@ -6,8 +6,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "./RoadshowQuotationList.css";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+const USE_LOCAL_API = false;   // set true for local, false for live
+const API_BASE_URL = USE_LOCAL_API
+  ? "http://localhost:3001"
+  : "https://roadshow-backend.onrender.com";
 
 const ROADSHOW_QUOTATION_API_URL = `${API_BASE_URL}/api/roadshow-quotations`;
 
