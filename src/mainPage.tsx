@@ -505,7 +505,7 @@ export default function MainApp() {
             </p>
           </div>
 
-          <div className="heroStats singleStat" onClick={() => navigate('/roadshowQO')}>
+          <div className="heroStats singleStat" style={{cursor: 'pointer'}} onClick={() => navigate('/roadshowQO')}>
             <div>
               <span>Total Variants</span>
               <strong>{vehicles.length}</strong>
