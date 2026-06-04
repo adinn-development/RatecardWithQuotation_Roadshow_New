@@ -1,47 +1,82 @@
-/* image upload */
+/* =========================================================
+   ADINN Roadshow Quotation Studio · Premium Design System
+   - Corporate, Apple-like, soft shadows, ADINN red accent
+   - Preserves: .printableArea .pdfPage (A4 portrait)
+   - PDF export safe (no backdrop-filters or transforms inside .pdfPage)
+   ========================================================= */
 
-* {
-  box-sizing: border-box;
+:root {
+  --ink-900: #0b0f17;
+  --ink-800: #111827;
+  --ink-700: #1f2937;
+  --ink-600: #334155;
+  --ink-500: #475569;
+  --ink-400: #64748b;
+  --ink-300: #94a3b8;
+  --ink-200: #cbd5e1;
+  --ink-100: #e5e7eb;
+  --ink-050: #eef1f5;
+
+  --paper: #ffffff;
+  --paper-warm: #fbfaf7;
+  --paper-tint: #f6f6f3;
+  --canvas: #f4f5f7;
+
+  --red-700: #991b1b;
+  --red-600: #b91c1c;
+  --red-500: #dc2626;
+  --red-050: rgba(220, 38, 38, 0.06);
+  --red-100: rgba(220, 38, 38, 0.14);
+
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 6px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 6px 22px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 24px 60px -28px rgba(15, 23, 42, 0.18);
+  --shadow-red: 0 16px 32px -14px rgba(220, 38, 38, 0.45);
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+
+  --font-stack: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
 }
+
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: #f5f6f8;
-  color: #111827;
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  background: var(--canvas);
+  color: var(--ink-800);
+  font-family: var(--font-stack);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-button,
-input,
-select {
-  font: inherit;
-}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
 
-button {
-  cursor: pointer;
-}
+/* ========================== PAGE SHELL ========================== */
 
 .qoPage {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(220, 38, 38, 0.08), transparent 34rem),
-    linear-gradient(180deg, #fafafa 0%, #f3f4f6 100%);
+    radial-gradient(1200px 600px at 100% -10%, rgba(220, 38, 38, 0.05), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(15, 23, 42, 0.04), transparent 60%),
+    var(--canvas);
 }
+
+/* ========================== HEADER ========================== */
 
 .qoHeader {
   position: sticky;
   top: 0;
-  z-index: 20;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.08);
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(18px);
+  z-index: 30;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: saturate(140%) blur(18px);
+  -webkit-backdrop-filter: saturate(140%) blur(18px);
 }
 
 .qoHeaderInner {
@@ -49,3647 +84,1235 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  max-width: 1480px;
+  max-width: 1560px;
   margin: 0 auto;
-  padding: 16px 24px;
+  padding: 16px 28px;
 }
 
-.qoBrand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+.qoBrand { display: flex; align-items: center; gap: 14px; }
 
 .qoBrandLogo {
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: 46px; height: 46px;
   place-items: center;
   overflow: hidden;
   border-radius: 14px;
-  background: #ffffff;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  background: #fff;
+  border: 1px solid var(--ink-100);
+  box-shadow: var(--shadow-sm);
 }
-
-.qoBrandLogo img {
-  width: 80%;
-  height: 80%;
-  object-fit: contain;
-}
+.qoBrandLogo img { width: 82%; height: 82%; object-fit: contain; }
 
 .qoBrand h1 {
   margin: 0;
   font-size: 18px;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink-900);
 }
-
 .qoBrand p {
-  margin: 2px 0 0;
-  color: #6b7280;
-  font-size: 13px;
+  margin: 3px 0 0;
+  color: var(--ink-400);
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
 }
 
-.qoHeaderActions {
+.qoHeaderActions { display: flex; align-items: center; gap: 10px; }
+
+.qoHeaderActions button,
+.quotationListLink,
+.smallBtn,
+.jsonDownloadBtn {
+  border: 1px solid var(--ink-100);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink-800);
+  padding: 10px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: all .18s ease;
+  box-shadow: var(--shadow-xs);
+}
+.qoHeaderActions button:hover,
+.quotationListLink:hover,
+.smallBtn:hover,
+.jsonDownloadBtn:hover {
+  border-color: var(--red-100);
+  color: var(--red-600);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.qoHeaderActions .primaryAction {
+  border-color: var(--red-600);
+  background: var(--red-600);
+  color: #fff;
+  box-shadow: var(--shadow-red);
+  padding: 11px 20px;
+}
+.qoHeaderActions .primaryAction:hover {
+  color: #fff;
+  background: var(--red-700);
+  border-color: var(--red-700);
+}
+.qoHeaderActions .primaryAction:disabled,
+.qoHeaderActions button:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+.smallBtn.dangerBtn {
+  border-color: rgba(220, 38, 38, 0.35);
+  color: var(--red-600);
+}
+.smallBtn.dangerBtn:hover {
+  background: var(--red-050);
+  border-color: var(--red-500);
+}
+
+/* ========================== MAIN LAYOUT ========================== */
+
+.qoMain {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 28px;
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 28px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .qoMain { grid-template-columns: 1fr; }
+}
+
+.qoFormColumn { display: grid; gap: 20px; min-width: 0; }
+
+.qoPreviewColumn {
+  position: sticky;
+  top: 92px;
+  min-width: 0;
+  align-self: start;
+}
+
+@media (max-width: 1100px) {
+  .qoPreviewColumn { position: static; }
+}
+
+/* ========================== CARDS ========================== */
+
+.qoCard {
+  background: #fff;
+  border: 1px solid var(--ink-100);
+  border-radius: var(--radius-xl);
+  padding: 26px 26px 28px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .2s ease, border-color .2s ease;
+}
+.qoCard:hover { box-shadow: var(--shadow-md); }
+
+.qoCard h2 {
+  margin: 0 0 18px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  color: var(--ink-900);
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.qoHeaderActions button,
-.smallBtn,
-.jsonDownloadBtn {
-  border: 1px solid rgba(17, 24, 39, 0.12);
+.qoStepBadge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 30px;
+  height: 24px;
+  padding: 0 8px;
   border-radius: 999px;
-  background: #ffffff;
-  color: #111827;
-  padding: 10px 14px;
+  background: var(--ink-900);
+  color: #fff;
+  font-size: 11px;
   font-weight: 700;
-  font-size: 13px;
-  transition: 0.2s ease;
-}
-
-.qoHeaderActions button:hover,
-.smallBtn:hover,
-.jsonDownloadBtn:hover {
-  border-color: rgba(220, 38, 38, 0.35);
-  color: #dc2626;
-  transform: translateY(-1px);
-}
-
-.qoHeaderActions .primaryAction {
-  border-color: #dc2626;
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-  color: #ffffff;
-  box-shadow: 0 16px 30px rgba(220, 38, 38, 0.22);
-}
-
-.qoHeaderActions .primaryAction:hover {
-  color: #ffffff;
-  background: linear-gradient(135deg, #b91c1c, #991b1b);
-}
-
-.qoMain {
-  display: grid;
-  grid-template-columns: minmax(420px, 520px) minmax(0, 1fr);
-  gap: 28px;
-  max-width: 1480px;
-  margin: 0 auto;
-  padding: 28px 24px 48px;
-}
-
-.qoFormColumn {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.qoPreviewColumn {
-  display: flex;
-  justify-content: center;
-  min-width: 0;
-  overflow: auto;
-  padding-bottom: 24px;
-}
-
-.qoCard {
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 24px;
-  background: #ffffff;
-  padding: 20px;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.06);
-}
-
-.qoCard h2 {
-  margin: 0 0 14px;
-  font-size: 16px;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.05em;
 }
 
 .qoSectionHeader {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
 }
-
-.qoSectionHeader h2 {
-  margin-bottom: 4px;
-}
-
+.qoSectionHeader h2, .qoSectionHeader h3 { margin: 0 0 4px; }
 .qoSectionHeader p {
-  max-width: 320px;
   margin: 0;
-  color: #6b7280;
-  font-size: 12px;
+  font-size: 13px;
+  color: var(--ink-400);
   line-height: 1.5;
 }
 
-.qoError,
-.qoLoading {
-  border-radius: 16px;
-  padding: 12px 14px;
-  font-size: 13px;
-}
+/* ========================== OPTION GRID ========================== */
 
-.qoError {
-  border: 1px solid rgba(220, 38, 38, 0.2);
-  background: #fef2f2;
-  color: #b91c1c;
-}
-
-.qoLoading {
-  background: #f9fafb;
-  color: #6b7280;
-}
-
-.qoOptionGrid,
-.qoInputGrid {
+.qoOptionGrid {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
-
-.qoOptionGrid.two,
-.qoInputGrid.two {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.qoOptionGrid.three {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
+.qoOptionGrid.two   { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.qoOptionGrid.three { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 
 .qoSelectCard {
-  min-height: 94px;
-  text-align: left;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 18px;
-  background: #f9fafb;
-  padding: 14px;
-  transition: 0.2s ease;
-}
-
-.qoSelectCard strong {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-.qoSelectCard span {
-  display: block;
-  color: #6b7280;
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.qoSelectCard.active {
-  border-color: rgba(220, 38, 38, 0.45);
-  background: #fff7f7;
-  box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.08);
-}
-
-.qoInputGrid label {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  color: #374151;
-  font-size: 12px;
-  font-weight: 700;
+  gap: 6px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 16px 16px;
+  background: #fff;
+  border: 1px solid var(--ink-100);
+  border-radius: var(--radius-lg);
+  color: var(--ink-800);
+  font: inherit;
+  transition: all .18s ease;
+  box-shadow: var(--shadow-xs);
+  min-height: 78px;
 }
+.qoSelectCard strong {
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--ink-900);
+  letter-spacing: -0.005em;
+}
+.qoSelectCard span,
+.qoSelectCard small {
+  font-size: 12.5px;
+  color: var(--ink-400);
+  line-height: 1.45;
+}
+.qoSelectCard:hover {
+  border-color: var(--ink-200);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.qoSelectCard.active {
+  border-color: var(--red-500);
+  background: linear-gradient(180deg, #fff, var(--red-050));
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08), var(--shadow-sm);
+}
+.qoSelectCard.active strong { color: var(--red-700); }
+
+.qoVariantSelector { margin-top: 22px; }
+
+/* ========================== INPUTS ========================== */
+
+.qoInputGrid {
+  display: grid;
+  gap: 16px;
+}
+.qoInputGrid.two { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+
+.qoInputGrid label,
+.qoCard > label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-600);
+  letter-spacing: 0.005em;
+}
+.qoInputGrid label.fullWidth { grid-column: 1 / -1; }
 
 .qoInputGrid input,
 .qoInputGrid select,
 .qoInputGrid textarea {
-  width: 100%;
-  border: 1px solid rgba(17, 24, 39, 0.1);
-  border-radius: 14px;
-  background: #ffffff;
-  color: #111827;
-  padding: 11px 12px;
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--ink-100);
+  background: var(--paper-warm);
+  color: var(--ink-900);
+  font-size: 14px;
+  font-weight: 500;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
   outline: none;
-  transition: 0.2s ease;
 }
-
-.qoInputGrid input:focus,
-.qoInputGrid select:focus,
-.qoInputGrid textarea:focus {
-  border-color: rgba(220, 38, 38, 0.55);
-  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.08);
-}
-
-.qoInputGrid small {
-  color: #9ca3af;
-  font-weight: 600;
-  font-size: 11px;
-}
-
 .qoInputGrid textarea {
+  height: auto;
   min-height: 88px;
+  padding: 12px 14px;
   resize: vertical;
   line-height: 1.5;
 }
-
-.qoInputGrid label.fullWidth {
-  grid-column: 1 / -1;
+.qoInputGrid input:hover,
+.qoInputGrid select:hover,
+.qoInputGrid textarea:hover { border-color: var(--ink-200); }
+.qoInputGrid input:focus,
+.qoInputGrid select:focus,
+.qoInputGrid textarea:focus {
+  border-color: var(--red-500);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.10);
+}
+.qoInputGrid input[disabled],
+.qoInputGrid input[readonly] {
+  background: var(--paper-tint);
+  color: var(--ink-500);
+  cursor: not-allowed;
+  border-style: dashed;
+}
+.qoInputGrid small {
+  color: var(--ink-400);
+  font-weight: 500;
+  font-size: 11.5px;
 }
 
 .moneyInput {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
+  height: 46px;
+  border-radius: 12px;
+  border: 1px solid var(--ink-100);
+  background: var(--paper-warm);
   overflow: hidden;
-  border: 1px solid rgba(17, 24, 39, 0.1);
-  border-radius: 14px;
-  background: #ffffff;
+  transition: border-color .15s ease, box-shadow .15s ease;
 }
-
-.moneyInput span {
+.moneyInput:focus-within {
+  border-color: var(--red-500);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.10);
+}
+.moneyInput > span {
+  padding: 0 12px;
+  font-size: 12.5px;
+  color: var(--ink-400);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-right: 1px solid var(--ink-100);
   height: 100%;
   display: grid;
   place-items: center;
-  padding: 0 10px;
-  background: #f9fafb;
-  color: #6b7280;
-  font-size: 12px;
+  background: #fff;
 }
-
 .moneyInput input {
-  border: 0;
-  border-radius: 0;
+  border: 0 !important;
+  background: transparent !important;
+  height: 100%;
+  padding: 0 12px;
+  outline: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+.moneyInput input[disabled],
+.moneyInput input[readonly] {
+  color: var(--ink-500);
+  background: transparent !important;
 }
 
-.qoAddonList {
+
+/* ========================== DISCOUNT SUMMARY ========================== */
+
+.qoDiscountSummary {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--ink-100);
+  background: linear-gradient(180deg, #fff, var(--paper-tint));
+  box-shadow: var(--shadow-xs);
+}
+
+.qoDiscountSummaryHeader {
   display: flex;
   flex-direction: column;
+  gap: 3px;
+  margin-bottom: 14px;
+}
+
+.qoDiscountSummaryHeader strong {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink-900);
+}
+
+.qoDiscountSummaryHeader span {
+  font-size: 12px;
+  color: var(--ink-400);
+  line-height: 1.45;
+}
+
+.qoDiscountSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
   gap: 10px;
 }
+
+.qoDiscountSummaryGrid > div {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 13px;
+  background: #fff;
+  border: 1px solid var(--ink-100);
+}
+
+.qoDiscountSummaryGrid span {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.qoDiscountSummaryGrid strong {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink-900);
+  white-space: nowrap;
+}
+
+.qoDiscountSummaryGrid .discountHighlight {
+  background: var(--red-050);
+  border-color: var(--red-100);
+}
+
+.qoDiscountSummaryGrid .discountHighlight strong {
+  color: var(--red-700);
+}
+
+.qoDiscountSummaryGrid .finalHighlight {
+  background: var(--ink-900);
+  border-color: var(--ink-900);
+}
+
+.qoDiscountSummaryGrid .finalHighlight span,
+.qoDiscountSummaryGrid .finalHighlight strong {
+  color: #fff;
+}
+
+/* ========================== ADD-ON CARDS ========================== */
+
+.qoAddonList { display: grid; gap: 12px; }
+.qoAddonCardList { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); display: grid; }
 
 .qoAddon {
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 16px;
-  background: #f9fafb;
-  padding: 12px;
-  color: #374151;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink-700);
+}
+.qoAddon input[type="checkbox"] {
+  width: 18px; height: 18px;
+  accent-color: var(--red-600);
 }
 
-.qoAddon input {
-  width: 16px;
-  height: 16px;
-  accent-color: #dc2626;
-}
-
-.jsonDownloadBtn {
-  margin-top: 14px;
-}
-
-/* Single-page A4 quotation design */
-
-.proposalDocument {
-  --quote-red: #dc2626;
-  --quote-red-dark: #991b1b;
-  --quote-ink: #111827;
-  --quote-muted: #667085;
-  --quote-soft: #f8fafc;
-  --quote-soft-red: #fff5f5;
-  --quote-line: #e5e7eb;
-
+.qoAddonCard {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 3.2mm;
-  width: 210mm;
-  height: 297mm;
-  flex: 0 0 auto;
-  overflow: hidden;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 22px;
-  background: #ffffff;
-  padding: 7mm;
-  box-shadow: 0 30px 90px rgba(15, 23, 42, 0.16);
-  color: var(--quote-ink);
+  align-items: flex-start;
+  padding: 16px 16px 16px 44px;
+  border: 1px solid var(--ink-100);
+  border-radius: var(--radius-lg);
+  background: #fff;
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  transition: all .18s ease;
 }
-
-.proposalDocument::before {
-  content: "";
+.qoAddonCard input[type="checkbox"] {
   position: absolute;
-  inset: 0 0 auto;
-  height: 1.4mm;
-  background: linear-gradient(90deg, var(--quote-red), #f97316, var(--quote-red));
+  top: 18px; left: 16px;
 }
-
-.quoteTopBar {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 62mm;
-  gap: 5mm;
-  align-items: stretch;
-  border: 1px solid var(--quote-line);
-  border-radius: 4mm;
-  background:
-    radial-gradient(circle at 8% 0%, rgba(220, 38, 38, 0.08), transparent 34mm),
-    linear-gradient(135deg, #ffffff 0%, #fffaf7 100%);
-  padding: 4mm;
+.qoAddonCardBody {
+  display: flex; flex-direction: column; gap: 4px;
 }
-
-.quoteBrandBlock {
-  display: grid;
-  grid-template-columns: 18mm minmax(0, 1fr);
-  gap: 4mm;
-  align-items: center;
+.qoAddonCardBody strong {
+  font-size: 14px; font-weight: 700; color: var(--ink-900);
 }
-
-.quoteLogoBox {
-  display: grid;
-  width: 18mm;
-  height: 18mm;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid rgba(220, 38, 38, 0.16);
-  border-radius: 4.5mm;
-  background: #ffffff;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
-}
-
-.quoteLogoBox img {
-  width: 78%;
-  height: 78%;
-  object-fit: contain;
-}
-
-.quoteCompanyName,
-.quoteSectionTitle span,
-.quoteTableHead span,
-.quotePartyCard p,
-.quoteMetaBox span,
-.quoteInfoGrid span,
-.quoteGrandBadge span,
-.quoteFooter span {
-  margin: 0;
-  color: var(--quote-muted);
-  font-size: 6.4pt;
-  font-weight: 900;
-  line-height: 1.1;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.quoteBrandBlock h1 {
-  margin: 1.4mm 0 1mm;
-  color: var(--quote-ink);
-  font-size: 19pt;
-  line-height: 1;
-  letter-spacing: -0.045em;
-}
-
-.quoteCompanyMeta {
-  max-width: 105mm;
-  margin: 0;
-  color: var(--quote-muted);
-  font-size: 7.4pt;
-  line-height: 1.35;
-}
-
-.quoteMetaBox {
-  display: grid;
-  gap: 1.5mm;
-}
-
-.quoteMetaBox div {
-  display: grid;
-  grid-template-columns: 22mm minmax(0, 1fr);
-  gap: 2mm;
-  align-items: center;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 2.8mm;
-  background: rgba(255, 255, 255, 0.82);
-  padding: 1.8mm 2.2mm;
-}
-
-.quoteMetaBox strong {
-  color: var(--quote-ink);
-  font-size: 7.1pt;
-  line-height: 1.15;
-  word-break: break-word;
-}
-
-.quotePartyGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3mm;
-}
-
-.quotePartyCard {
-  min-height: 25mm;
-  border: 1px solid var(--quote-line);
-  border-radius: 3.5mm;
-  background: #ffffff;
-  padding: 3mm;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.035);
-}
-
-.quotePartyCard.right {
-  background: var(--quote-soft);
-}
-
-.quotePartyCard h2 {
-  margin: 1.4mm 0 1mm;
-  color: var(--quote-ink);
-  font-size: 10pt;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-}
-
-.quotePartyCard span {
-  display: block;
-  margin-top: 0.8mm;
-  color: #4b5563;
-  font-size: 7.2pt;
-  line-height: 1.18;
-}
-
-.quoteCampaignCard {
-  border: 1px solid rgba(220, 38, 38, 0.14);
-  border-radius: 4mm;
-  background:
-    radial-gradient(circle at 0% 0%, rgba(220, 38, 38, 0.065), transparent 35mm),
-    #ffffff;
-  padding: 3.2mm;
-}
-
-.quoteSectionTitle {
-  display: grid;
-  gap: 1mm;
-  margin-bottom: 2.4mm;
-}
-
-.quoteSectionTitle strong {
-  color: var(--quote-ink);
-  font-size: 12.6pt;
-  line-height: 1.05;
-  letter-spacing: -0.035em;
-}
-
-.quoteSectionTitle p {
-  max-width: 155mm;
-  margin: 0;
-  color: var(--quote-muted);
-  font-size: 7.2pt;
-  line-height: 1.25;
-}
-
-.quoteInfoGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.7mm;
-}
-
-.quoteInfoGrid div {
-  min-height: 12mm;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 2.7mm;
-  background: #ffffff;
-  padding: 1.8mm;
-}
-
-.quoteInfoGrid strong {
-  display: block;
-  margin-top: 0.7mm;
-  color: var(--quote-ink);
-  font-size: 7.2pt;
-  line-height: 1.15;
-  word-break: break-word;
-}
-
-.quoteTableCard {
-  border: 1px solid var(--quote-line);
-  border-radius: 4mm;
-  background: #ffffff;
-  padding: 10px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
-}
-
-.quoteTableHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4mm;
-  margin-bottom: 2.3mm;
-}
-
-.quoteTableHead span {
-  color: var(--quote-ink);
-  font-size: 10.5pt;
-  letter-spacing: -0.02em;
-  text-transform: none;
-}
-
-.quoteTableHead p {
-  margin: 0.8mm 0 0;
-  color: var(--quote-muted);
-  font-size: 6.8pt;
-  line-height: 1.2;
-}
-
-.quoteGrandBadge {
-  flex: 0 0 auto;
-  min-width: 43mm;
-  border: 1px solid rgba(220, 38, 38, 0.2);
-  border-radius: 3mm;
-  background: linear-gradient(135deg, var(--quote-red), var(--quote-red-dark));
-  color: #ffffff;
-  padding: 2.3mm 3.2mm;
-  text-align: right;
-  box-shadow: 0 10px 22px rgba(220, 38, 38, 0.18);
-}
-
-.quoteGrandBadge span,
-.quoteGrandBadge strong {
-  display: block;
-  color: #ffffff;
-}
-
-.quoteGrandBadge strong {
-  margin-top: 0.7mm;
-  font-size: 12.8pt;
-  line-height: 1;
-}
-
-.quotationTable {
-  width: 100%;
-  table-layout: fixed;
-  border: 1px solid var(--quote-line);
-  border-collapse: separate;
-  border-spacing: 0;
-  overflow: hidden;
-  border-radius: 3.2mm;
-  background: #ffffff;
-  font-size: 7.1pt;
-}
-
-.quotationTable th {
-  background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
-  color: #475467;
-  padding: 2mm 2.2mm;
-  text-align: left;
-  font-size: 6.4pt;
-  line-height: 1.05;
-  text-transform: uppercase;
-  letter-spacing: 0.075em;
-  border-bottom: 1px solid var(--quote-line);
-}
-
-.quotationTable th:first-child,
-.quotationTable td:first-child {
-  width: 12mm;
-  text-align: center;
-}
-
-.quotationTable th:nth-child(2),
-.quotationTable td:nth-child(2) {
-  width: 58mm;
-}
-
-.quotationTable th:nth-child(3),
-.quotationTable td:nth-child(3) {
-  width: auto;
-}
-
-.quotationTable th:last-child,
-.quotationTable td:last-child {
-  width: 34mm;
-  text-align: right;
-  white-space: nowrap;
-}
-
-.quotationTable td {
-  border-top: 1px solid #edf0f3;
-  padding: 2.2mm 2.2mm;
-  color: #374151;
-  line-height: 1.24;
-  vertical-align: top;
-  word-break: normal;
-}
-
-.quotationTable tbody tr:first-child td {
-  border-top: 0;
-}
-
-.quotationTable tbody tr:nth-child(even) td {
-  background: #fcfcfd;
-}
-
-.quotationTable tbody tr:hover td {
-  background: #fffafa;
-}
-
-.quotationTable tbody td:first-child {
-  color: #64748b;
-  font-weight: 800;
-}
-
-.quoteParticularBlock {
-  display: grid;
-  gap: 1mm;
-}
-
-.quoteParticularName {
-  display: block;
-  color: var(--quote-ink);
-  font-size: 7.8pt;
-  line-height: 1.16;
-  font-weight: 950;
-}
-
-.quoteParticularDescription {
-  margin: 0;
-  color: #4b5563;
-  font-size: 6.75pt;
-  line-height: 1.32;
-  font-weight: 650;
-}
-
-.quoteItemDescription {
-  margin: 0;
-  color: #253044;
-  font-size: 7.15pt;
-  line-height: 1.32;
-  font-weight: 650;
-}
-
-.quoteBreakdownGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.2mm;
-  margin-top: 0;
-}
-
-.quoteBreakdownGrid span {
-  display: block;
-  min-height: 9.5mm;
-  border: 1px solid #e8edf3;
-  border-radius: 2.2mm;
-  background: #f8fafc;
-  padding: 1.35mm 1.5mm;
-}
-
-.quoteBreakdownGrid em {
-  display: block;
-  margin-bottom: 0.7mm;
-  color: #7b8794;
-  font-size: 5.7pt;
-  line-height: 1;
+.qoAddonCardBody em {
   font-style: normal;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.quoteBreakdownGrid strong {
-  display: block;
-  color: var(--quote-ink);
-  font-size: 6.65pt;
-  line-height: 1.2;
-  font-weight: 850;
-  word-break: break-word;
-}
-
-.quoteFormulaLine {
-  display: grid;
-  grid-template-columns: 27mm minmax(0, 1fr);
-  gap: 1.5mm;
-  align-items: center;
-  margin-top: 1.5mm;
-  border-left: 0.8mm solid rgba(220, 38, 38, 0.7);
-  border-radius: 1.8mm;
-  background: #fff7f7;
-  padding: 1.2mm 1.6mm;
-}
-
-.quoteFormulaLine span {
-  color: var(--quote-red-dark);
-  font-size: 5.7pt;
-  line-height: 1;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.quoteFormulaLine strong {
-  color: #1f2937;
-  font-size: 6.65pt;
-  line-height: 1.2;
-  font-weight: 850;
-  word-break: break-word;
-}
-
-.quoteAmountValue {
-  display: inline-flex;
-  justify-content: flex-end;
-  min-width: 28mm;
-  color: var(--quote-ink);
-  font-size: 8.1pt;
-  line-height: 1.1;
-  font-weight: 950;
-}
-
-.quotationTable tfoot td {
-  border-top: 1px solid var(--quote-line);
-  background: #ffffff;
-  color: var(--quote-ink);
-  font-weight: 950;
-  padding: 2mm 2.2mm;
-}
-
-.quotationTable tfoot td:first-child {
-  text-align: right;
-}
-
-.quotationTable .quotationGrandRow td {
-  border-top: 1px solid rgba(220, 38, 38, 0.22);
-  background: var(--quote-soft-red);
-  color: var(--quote-red);
-  font-size: 8.8pt;
-}
-
-.quoteBottomGrid {
-  display: grid;
-  grid-template-columns: 0.95fr 1.65fr;
-  gap: 3mm;
-}
-
-.quoteMiniCard {
-  min-height: 34mm;
-  border: 1px solid var(--quote-line);
-  border-radius: 3.5mm;
-  background: #ffffff;
-  padding: 3mm;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.035);
-}
-
-.quoteMiniCard.wide {
-  background: var(--quote-soft);
-}
-
-.quoteMiniCard h3 {
-  margin: 0 0 1.8mm;
-  color: var(--quote-ink);
-  font-size: 8.8pt;
-  line-height: 1;
-  letter-spacing: -0.015em;
-}
-
-.quoteMiniCard ul,
-.quoteMiniCard ol {
-  margin: 0;
-  padding-left: 4mm;
-  color: #4b5563;
-  font-size: 6.8pt;
-  line-height: 1.31;
-}
-
-.quoteMiniCard li + li {
-  margin-top: 0.6mm;
-}
-
-.quoteFooter {
-  display: grid;
-  grid-template-columns: 1fr 58mm;
-  gap: 5mm;
-  align-items: end;
-  margin-top: auto;
-  border-top: 1px solid var(--quote-line);
-  padding-top: 2.8mm;
-}
-
-.quoteFooter span {
-  display: block;
-  color: var(--quote-muted);
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-.quoteFooter strong {
-  display: block;
-  margin-top: 0.8mm;
-  color: var(--quote-ink);
-  font-size: 7.1pt;
-  line-height: 1.2;
-}
-
-.quoteSignature {
-  text-align: right;
-}
-
-.quoteSignature::before {
-  content: "";
-  display: block;
-  width: 34mm;
-  margin: 0 0 2.2mm auto;
-  border-top: 1px solid #cfd4dc;
-}
-
-.pdfMode .proposalDocument {
-  border-radius: 0;
-  box-shadow: none;
-}
-
-@media (max-width: 1180px) {
-  .qoMain {
-    grid-template-columns: 1fr;
-  }
-
-  .qoPreviewColumn {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 680px) {
-  .qoHeaderInner,
-  .qoHeaderActions,
-  .qoSectionHeader {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .qoMain {
-    padding: 18px 14px 36px;
-  }
-
-  .qoOptionGrid.two,
-  .qoOptionGrid.three,
-  .qoInputGrid.two {
-    grid-template-columns: 1fr;
-  }
-
-  .proposalDocument {
-    transform: scale(0.52);
-    transform-origin: top left;
-  }
-
-  .qoPreviewColumn {
-    min-height: 560px;
-  }
-}
-
-@page {
-  size: A4;
-  margin: 0;
-}
-
-@media print {
-  html,
-  body {
-    width: 210mm;
-    height: 297mm;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #ffffff !important;
-  }
-
-  body {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  .noPrint {
-    display: none !important;
-  }
-
-  .qoPage,
-  .qoMain,
-  .qoPreviewColumn {
-    display: block !important;
-    width: 210mm !important;
-    height: 297mm !important;
-    min-height: 297mm !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-    background: #ffffff !important;
-  }
-
-  .proposalDocument {
-    display: flex !important;
-    width: 210mm !important;
-    height: 297mm !important;
-    min-height: 297mm !important;
-    margin: 0 !important;
-    padding: 7mm !important;
-    overflow: hidden !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    page-break-after: avoid;
-    page-break-before: avoid;
-    page-break-inside: avoid;
-  }
-
-  .quoteTopBar,
-  .quotePartyGrid,
-  .quoteCampaignCard,
-  .quoteTableCard,
-  .quoteBottomGrid,
-  .quoteFooter {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-}
-
-/* Quotation overflow fix
-   Keeps the Terms & Conditions and footer visible when multiple add-ons
-   increase the commercial table height. */
-.proposalDocument.compactQuote {
-  gap: 2.15mm;
-  padding: 6mm;
-}
-
-.proposalDocument.compactQuote .quoteTopBar {
-  padding: 2.8mm;
-}
-
-.proposalDocument.compactQuote .quoteBrandBlock {
-  grid-template-columns: 15mm minmax(0, 1fr);
-  gap: 3mm;
-}
-
-.proposalDocument.compactQuote .quoteLogoBox {
-  width: 15mm;
-  height: 15mm;
-  border-radius: 3.5mm;
-}
-
-.proposalDocument.compactQuote .quoteBrandBlock h1 {
-  margin: 1mm 0 0;
-  font-size: 16.5pt;
-}
-
-.proposalDocument.compactQuote .quoteMetaBox {
-  gap: 1mm;
-}
-
-.proposalDocument.compactQuote .quoteMetaBox div {
-  padding: 1.35mm 1.8mm;
-}
-
-.proposalDocument.compactQuote .quotePartyGrid {
-  gap: 2.2mm;
-}
-
-.proposalDocument.compactQuote .quotePartyCard {
-  min-height: 20mm;
-  padding: 2.3mm;
-}
-
-.proposalDocument.compactQuote .quotePartyCard h2 {
-  margin: 1mm 0 0.6mm;
-  font-size: 9pt;
-}
-
-.proposalDocument.compactQuote .quotePartyCard span {
-  margin-top: 0.45mm;
-  font-size: 6.6pt;
-  line-height: 1.1;
-}
-
-.proposalDocument.compactQuote .quoteCampaignCard {
-  padding: 2.4mm;
-}
-
-.proposalDocument.compactQuote .quoteSectionTitle {
-  margin-bottom: 1.8mm;
-}
-
-.proposalDocument.compactQuote .quoteSectionTitle strong {
-  font-size: 11pt;
-}
-
-.proposalDocument.compactQuote .quoteInfoGrid {
-  gap: 1.2mm;
-}
-
-.proposalDocument.compactQuote .quoteInfoGrid div {
-  min-height: 9.8mm;
-  padding: 1.35mm;
-}
-
-.proposalDocument.compactQuote .quoteInfoGrid strong {
-  margin-top: 0.45mm;
-  font-size: 6.55pt;
-  line-height: 1.08;
-}
-
-.proposalDocument.compactQuote .quoteTableCard {
-  padding: 2.35mm;
-}
-
-.proposalDocument.compactQuote .quoteTableHead {
-  margin-bottom: 1.6mm;
-}
-
-.proposalDocument.compactQuote .quoteTableHead span {
-  font-size: 9.4pt;
-}
-
-.proposalDocument.compactQuote .quoteTableHead p {
-  margin-top: 0.45mm;
-  font-size: 6.25pt;
-}
-
-.proposalDocument.compactQuote .quoteGrandBadge {
-  min-width: 39mm;
-  padding: 1.8mm 2.5mm;
-}
-
-.proposalDocument.compactQuote .quoteGrandBadge strong {
-  font-size: 11pt;
-}
-
-.proposalDocument.compactQuote .quotationTable {
-  font-size: 6.35pt;
-}
-
-.proposalDocument.compactQuote .quotationTable th {
-  padding: 1.25mm 1.55mm;
-  font-size: 5.75pt;
-  letter-spacing: 0.055em;
-}
-
-.proposalDocument.compactQuote .quotationTable td {
-  padding: 1.15mm 1.55mm;
-  line-height: 1.12;
-}
-
-.proposalDocument.compactQuote .quotationTable tfoot td {
-  padding: 1.25mm 1.55mm;
-}
-
-.proposalDocument.compactQuote .quotationTable .quotationGrandRow td {
-  font-size: 7.75pt;
-}
-
-.proposalDocument.compactQuote .quoteParticularBlock {
-  gap: 0.45mm;
-}
-
-.proposalDocument.compactQuote .quoteParticularName {
-  font-size: 6.95pt;
-  line-height: 1.05;
-}
-
-.proposalDocument.compactQuote .quoteParticularDescription {
-  font-size: 5.95pt;
-  line-height: 1.12;
-}
-
-.quoteBottomGrid {
-  grid-template-columns: 1fr;
-  gap: 2mm;
-}
-
-.quoteMiniCard.wide {
-  grid-column: 1 / -1;
-}
-
-.proposalDocument.compactQuote .quoteMiniCard {
-  min-height: 0;
-  padding: 2.25mm;
-}
-
-.proposalDocument.compactQuote .quoteMiniCard h3 {
-  margin-bottom: 1.25mm;
-  font-size: 8pt;
-}
-
-.proposalDocument.compactQuote .quoteMiniCard ol {
-  columns: 2;
-  column-gap: 7mm;
-  padding-left: 3.2mm;
-  font-size: 6.25pt;
-  line-height: 1.18;
-}
-
-.proposalDocument.compactQuote .quoteMiniCard li {
-  break-inside: avoid;
-}
-
-.proposalDocument.compactQuote .quoteMiniCard li + li {
-  margin-top: 0.35mm;
-}
-
-.proposalDocument.compactQuote .quoteFooter {
-  grid-template-columns: 1fr 50mm;
-  gap: 4mm;
-  margin-top: 0;
-  padding-top: 1.8mm;
-}
-
-.proposalDocument.compactQuote .quoteFooter strong {
-  margin-top: 0.45mm;
-  font-size: 6.5pt;
-}
-
-.proposalDocument.compactQuote .quoteSignature::before {
-  width: 30mm;
-  margin-bottom: 1.6mm;
-}
-
-@media print {
-  .proposalDocument.compactQuote {
-    padding: 6mm !important;
-    gap: 2.15mm !important;
-  }
-
-  .proposalDocument.compactQuote .quoteMiniCard {
-    min-height: 0 !important;
-  }
-
-  .proposalDocument.compactQuote .quoteMiniCard ol {
-    columns: 2 !important;
-  }
-}
-
-/* Client-ready premium quotation polish */
-.proposalDocument {
-  --quote-red: #d71920;
-  --quote-red-dark: #8f1116;
-  --quote-ink: #0f172a;
-  --quote-muted: #667085;
-  --quote-soft: #f8fafc;
-  --quote-soft-red: #fff3f2;
-  --quote-line: #e4e7ec;
-  --quote-gold: #f97316;
-  --quote-premium-shadow: 0 18px 46px rgba(15, 23, 42, 0.08);
-  background:
-    radial-gradient(circle at 11% 4%, rgba(215, 25, 32, 0.07), transparent 42mm),
-    radial-gradient(circle at 92% 2%, rgba(249, 115, 22, 0.08), transparent 38mm),
-    linear-gradient(180deg, #ffffff 0%, #ffffff 54%, #fbfcff 100%);
-  border-color: rgba(15, 23, 42, 0.08);
-}
-
-.proposalDocument::before {
-  height: 1.7mm;
-  background: linear-gradient(90deg, var(--quote-red-dark), var(--quote-red) 34%, var(--quote-gold) 67%, var(--quote-red));
-}
-
-.proposalDocument::after {
-  content: "ROADSHOW";
-  position: absolute;
-  right: -9mm;
-  bottom: 37mm;
-  z-index: 0;
-  color: rgba(15, 23, 42, 0.028);
-  font-size: 31pt;
-  font-weight: 950;
-  letter-spacing: 0.22em;
-  transform: rotate(-90deg);
-  pointer-events: none;
-}
-
-.quoteTopBar,
-.quotePartyGrid,
-.quoteCampaignCard,
-.quoteTableCard,
-.quoteTermsPanel,
-.quotePremiumFooter {
-  position: relative;
-  z-index: 1;
-}
-
-.quoteTopBar {
-  overflow: hidden;
-  border: 1px solid rgba(215, 25, 32, 0.13);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(255, 248, 246, 0.96)),
-    radial-gradient(circle at 5% 5%, rgba(215, 25, 32, 0.1), transparent 34mm);
-  box-shadow: var(--quote-premium-shadow);
-}
-
-.quoteTopBar::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 1.1mm;
-  background: linear-gradient(180deg, var(--quote-red), var(--quote-gold), var(--quote-red-dark));
-}
-
-.quoteBrandBlock h1 {
-  color: var(--quote-ink);
-  font-weight: 950;
-}
-
-.quoteCompanyName {
-  color: var(--quote-red-dark);
-}
-
-.quoteLogoBox {
-  border-color: rgba(215, 25, 32, 0.18);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.075);
-}
-
-.quoteMetaBox div,
-.quotePartyCard,
-.quoteCampaignCard,
-.quoteTableCard {
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.045);
-}
-
-.quoteMetaBox div {
-  border-color: rgba(15, 23, 42, 0.075);
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.quotePartyCard {
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.62));
-}
-
-.quotePartyCard::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 0.55mm;
-  background: linear-gradient(90deg, rgba(215, 25, 32, 0.9), rgba(249, 115, 22, 0.55), transparent);
-}
-
-.quotePartyCard.right::before {
-  background: linear-gradient(90deg, rgba(15, 23, 42, 0.45), rgba(215, 25, 32, 0.45), transparent);
-}
-
-.quoteCampaignCard {
-  overflow: hidden;
-  border-color: rgba(215, 25, 32, 0.18);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 247, 246, 0.82)),
-    radial-gradient(circle at 0% 0%, rgba(215, 25, 32, 0.1), transparent 36mm);
-}
-
-.quoteCampaignCard::after {
-  content: "CAMPAIGN PLAN";
-  position: absolute;
-  right: 3mm;
-  top: 3mm;
-  color: rgba(215, 25, 32, 0.08);
-  font-size: 10pt;
-  font-weight: 950;
-  letter-spacing: 0.18em;
-}
-
-.quoteInfoGrid div {
-  border-color: rgba(15, 23, 42, 0.075);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-.quoteTableCard {
-  overflow: hidden;
-  border-color: rgba(15, 23, 42, 0.1);
-  background: rgba(255, 255, 255, 0.96);
-}
-
-.quoteTableCard::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 0.7mm;
-  background: linear-gradient(90deg, rgba(15, 23, 42, 0.75), rgba(215, 25, 32, 0.82), rgba(249, 115, 22, 0.68));
-}
-
-.quoteTableHead span {
-  color: var(--quote-ink);
-  font-weight: 950;
-}
-
-.quoteGrandBadge {
-  border: 0;
-  background:
-    linear-gradient(135deg, var(--quote-red), var(--quote-red-dark));
-  box-shadow: 0 12px 28px rgba(215, 25, 32, 0.22);
-}
-
-.quotationTable {
-  border-color: rgba(15, 23, 42, 0.1);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.035);
-}
-
-.quotationTable th {
-  background: linear-gradient(180deg, #101828 0%, #1f2937 100%);
-  color: #ffffff;
-  border-bottom: 0;
-}
-
-.quotationTable td {
-  border-top-color: #edf1f5;
-}
-
-.quotationTable tbody tr:nth-child(even) td {
-  background: #fafbfc;
-}
-
-.quotationTable tbody td:first-child {
-  color: var(--quote-red-dark);
-}
-
-.quoteParticularName {
-  color: var(--quote-ink);
-}
-
-.quotationTable .quotationGrandRow td {
-  background:
-    linear-gradient(90deg, rgba(215, 25, 32, 0.1), rgba(255, 243, 242, 0.95));
-  color: var(--quote-red-dark);
-}
-
-/* Premium Terms & Conditions timeline */
-.quoteTermsPanel {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: 4.2mm;
-  background:
-    radial-gradient(circle at 0% 0%, rgba(215, 25, 32, 0.1), transparent 35mm),
-    linear-gradient(135deg, #ffffff 0%, #fbfcff 100%);
-  padding: 3mm 3.2mm 3.2mm;
-  box-shadow: var(--quote-premium-shadow);
-}
-
-.quoteTermsPanel::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 1mm;
-  background: linear-gradient(180deg, var(--quote-red), var(--quote-gold), var(--quote-red-dark));
-}
-
-.quoteTermsPanel::after {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 0.5mm;
-  background: linear-gradient(90deg, rgba(215, 25, 32, 0), rgba(215, 25, 32, 0.24), rgba(249, 115, 22, 0));
-}
-
-.quoteTermsHeader {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 4mm;
-  margin-bottom: 2.4mm;
-  padding-left: 1mm;
-}
-
-.quoteTermsHeader span {
-  display: block;
-  margin: 0 0 0.75mm;
-  color: var(--quote-red-dark);
-  font-size: 5.85pt;
-  font-weight: 950;
-  line-height: 1;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.quoteTermsHeader h3 {
-  margin: 0;
-  color: var(--quote-ink);
-  font-size: 10.5pt;
-  line-height: 1;
-  letter-spacing: -0.03em;
-}
-
-.quoteTermsHeader strong {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 6.5mm;
-  border: 1px solid rgba(215, 25, 32, 0.16);
-  border-radius: 999px;
-  background:
-    linear-gradient(180deg, #ffffff, #fff6f5);
-  color: var(--quote-red-dark);
-  padding: 1.45mm 2.6mm;
-  font-size: 6pt;
-  line-height: 1;
-  font-weight: 950;
-  white-space: nowrap;
-  box-shadow: 0 7px 16px rgba(215, 25, 32, 0.09);
-}
-
-.quoteTermsBody {
-  display: block;
-  padding-left: 1mm;
-}
-
-
-
-
-
-.quoteTermsTimeline {
-  position: relative;
-  display: grid;
-  gap: 1mm;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.quoteTermsTimeline li {
-  position: relative;
-  display: grid;
-  grid-template-columns: 5.6mm minmax(0, 1fr);
-  gap: 1.9mm;
-  align-items: flex-start;
-  min-height: 7.2mm;
-  border: 1px solid rgba(226, 232, 240, 0.92);
-  border-radius: 2.7mm;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 1.15mm 1.7mm;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
-}
-
-.quoteTermsTimeline li::before {
-  content: "";
-  position: absolute;
-  left: 4.18mm;
-  top: 4.9mm;
-  bottom: -1.2mm;
-  width: 0.45mm;
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(215, 25, 32, 0.78), rgba(249, 115, 22, 0.58));
-  z-index: 0;
-}
-
-.quoteTermsTimeline li:last-child::before {
-  display: none;
-}
-
-.quoteTermDot {
-  position: relative;
-  z-index: 1;
-  display: block;
-  width: 3.1mm;
-  height: 3.1mm;
-  margin: 1.05mm auto 0;
-  border: 0.85mm solid var(--quote-red);
-  border-radius: 999px;
-  background: #ffffff;
-  box-shadow:
-    0 0 0 0.75mm #fff5f5,
-    0 5px 11px rgba(215, 25, 32, 0.2);
-}
-
-.quoteTermsTimeline p {
-  margin: 0;
-  color: #27364a;
-  font-size: 6.25pt;
-  font-weight: 760;
-  line-height: 1.2;
-}
-
-.quotePremiumFooter {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: 3.7mm;
-  background:
-    linear-gradient(90deg, rgba(215, 25, 32, 0.08), transparent 40%),
-    linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  padding: 2.75mm 3mm;
-  margin-top: auto;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.055);
-}
-
-.quotePremiumFooter::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 0.75mm;
-  background: linear-gradient(90deg, var(--quote-red), var(--quote-gold), transparent);
-}
-
-.quoteFooterNote {
-  border-left: 0.8mm solid var(--quote-red);
-  padding-left: 2mm;
-}
-
-.quotePremiumFooter .quoteFooterNote span,
-.quotePremiumFooter .quoteSignature span {
-  color: var(--quote-muted);
-  font-size: 6.1pt;
-  font-weight: 950;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
-.quotePremiumFooter .quoteFooterNote strong {
-  margin-top: 0.8mm;
-  color: var(--quote-ink);
-  font-size: 7pt;
-  line-height: 1.15;
-  font-weight: 950;
-}
-
-.quotePremiumFooter .quoteSignature {
-  align-self: stretch;
-  display: grid;
-  align-content: end;
-  border-left: 1px solid rgba(15, 23, 42, 0.08);
-  padding-left: 4mm;
-}
-
-.quotePremiumFooter .quoteSignature strong {
-  color: var(--quote-ink);
-  font-size: 7.2pt;
-  line-height: 1.1;
-  font-weight: 950;
-}
-
-.quotePremiumFooter .quoteSignature::before {
-  width: 36mm;
-  margin-bottom: 2.1mm;
-  border-top: 1.2px solid rgba(15, 23, 42, 0.26);
-}
-
-.proposalDocument.compactQuote .quoteTermsPanel {
-  padding: 2.15mm 2.35mm 2.25mm 3mm;
-  border-radius: 3.5mm;
-}
-
-.proposalDocument.compactQuote .quoteTermsHeader {
-  margin-bottom: 1.35mm;
-}
-
-.proposalDocument.compactQuote .quoteTermsHeader span {
-  margin-bottom: 0.42mm;
-  font-size: 5.1pt;
-}
-
-.proposalDocument.compactQuote .quoteTermsHeader h3 {
-  font-size: 8.7pt;
-}
-
-.proposalDocument.compactQuote .quoteTermsHeader strong {
-  min-height: 5.25mm;
-  padding: 1mm 2mm;
-  font-size: 5.35pt;
-}
-
-.proposalDocument.compactQuote .quoteTermsBody {
-  display: block;
-  padding-left: 0.8mm;
-}
-
-
-
-
-.proposalDocument.compactQuote .quoteTermsTimeline {
-  gap: 0.62mm;
-}
-
-.proposalDocument.compactQuote .quoteTermsTimeline li {
-  grid-template-columns: 4.7mm minmax(0, 1fr);
-  gap: 1.05mm;
-  min-height: 5.85mm;
-  border-radius: 2.1mm;
-  padding: 0.7mm 1.1mm;
-}
-
-.proposalDocument.compactQuote .quoteTermsTimeline li::before {
-  left: 3.56mm;
-  top: 4.15mm;
-  bottom: -0.8mm;
-  width: 0.38mm;
-}
-
-.proposalDocument.compactQuote .quoteTermDot {
-  width: 2.6mm;
-  height: 2.6mm;
-  margin-top: 0.8mm;
-  border-width: 0.7mm;
-  box-shadow:
-    0 0 0 0.58mm #fff5f5,
-    0 4px 8px rgba(215, 25, 32, 0.16);
-}
-
-.proposalDocument.compactQuote .quoteTermsTimeline p {
-  font-size: 5.28pt;
-  line-height: 1.08;
-}
-
-.proposalDocument.compactQuote .quotePremiumFooter {
-  grid-template-columns: 1fr 47mm;
-  padding: 2mm 2.4mm;
-  border-radius: 3mm;
-}
-
-.proposalDocument.compactQuote .quoteFooterNote {
-  padding-left: 1.55mm;
-}
-
-.proposalDocument.compactQuote .quotePremiumFooter .quoteFooterNote span,
-.proposalDocument.compactQuote .quotePremiumFooter .quoteSignature span {
-  font-size: 5.45pt;
-}
-
-.proposalDocument.compactQuote .quotePremiumFooter .quoteFooterNote strong,
-.proposalDocument.compactQuote .quotePremiumFooter .quoteSignature strong {
-  font-size: 6.25pt;
-}
-
-.proposalDocument.compactQuote .quotePremiumFooter .quoteSignature {
-  padding-left: 2.6mm;
-}
-
-.proposalDocument.compactQuote .quotePremiumFooter .quoteSignature::before {
-  width: 28mm;
-  margin-bottom: 1.35mm;
-}
-
-@media print {
-  .quoteTermsPanel,
-  .quotePremiumFooter {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  .proposalDocument::after {
-    color: rgba(15, 23, 42, 0.022) !important;
-  }
-}
-
-/* Final client-ready Terms & Conditions timeline layout */
-.quoteTermsBody {
-  display: block;
-  padding-left: 1mm;
-}
-
-.quoteTermsTimeline {
-  width: 100%;
-  gap: 1.05mm;
-}
-
-.quoteTermsTimeline li {
-  grid-template-columns: 6.2mm minmax(0, 1fr);
-  gap: 2mm;
-  min-height: 7.7mm;
-  padding: 1.25mm 1.9mm;
-  border-color: rgba(215, 25, 32, 0.12);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.82));
-}
-
-.quoteTermsTimeline li::before {
-  left: 4.68mm;
-  top: 5.2mm;
-  bottom: -1.35mm;
-  width: 0.48mm;
-  background: linear-gradient(180deg, rgba(215, 25, 32, 0.82), rgba(249, 115, 22, 0.62));
-}
-
-.quoteTermDot {
-  width: 3.35mm;
-  height: 3.35mm;
-  margin-top: 1.05mm;
-}
-
-.quoteTermsTimeline p {
-  font-size: 6.4pt;
-  line-height: 1.2;
-}
-
-.proposalDocument.compactQuote .quoteTermsBody {
-  display: block;
-  padding-left: 0.8mm;
-}
-
-.proposalDocument.compactQuote .quoteTermsTimeline {
-  gap: 0.62mm;
-}
-
-.proposalDocument.compactQuote .quoteTermsTimeline li {
-  grid-template-columns: 5.2mm minmax(0, 1fr);
-  gap: 1.15mm;
-  min-height: 5.85mm;
-  padding: 0.72mm 1.25mm;
-}
-
-.proposalDocument.compactQuote .quoteTermsTimeline li::before {
-  left: 3.93mm;
-  top: 4.15mm;
-  bottom: -0.82mm;
-  width: 0.38mm;
-}
-
-.proposalDocument.compactQuote .quoteTermDot {
-  width: 2.65mm;
-  height: 2.65mm;
-  margin-top: 0.78mm;
-}
-
-.proposalDocument.compactQuote .quoteTermsTimeline p {
-  font-size: 5.32pt;
-  line-height: 1.09;
-}
-
-@media print {
-  .quoteTermsBody {
-    display: block !important;
-  }
-}
-
-
-/* Final prepared-by form + auto grand total polish */
-.quoteGrandBadge {
-  width: fit-content;
-  min-width: 0;
-  max-width: none;
-  padding: 2.25mm 3.2mm;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.proposalDocument.compactQuote .quoteGrandBadge {
-  width: fit-content;
-  min-width: 0;
-  max-width: none;
-  padding: 1.75mm 2.65mm;
-}
-
-.quotePartyCard.right h2 {
-  word-break: normal;
-  overflow-wrap: anywhere;
-}
-
-.quotePartyCard.right span {
-  word-break: normal;
-  overflow-wrap: anywhere;
-}
-
-/* Mandatory 55" LED TV power-backup rule */
-.qoAddon.locked {
-  border-color: rgba(215, 25, 32, 0.18);
-  background:
-    linear-gradient(180deg, #ffffff, #fff7f7);
-}
-
-.qoAddon.locked input {
-  cursor: not-allowed;
-}
-
-.qoAddon.locked span {
-  color: #8f1116;
-}
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-400);
+}
+.qoAddonCardBody small {
+  margin-top: 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--red-600);
+  letter-spacing: 0.01em;
+}
+.qoAddonCard:hover {
+  border-color: var(--ink-200);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.qoAddonCard.active {
+  border-color: var(--red-500);
+  background: linear-gradient(180deg, #fff, var(--red-050));
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08), var(--shadow-sm);
+}
+.qoAddonCard.locked { opacity: .92; cursor: not-allowed; }
 
 .qoAddonNote {
-  margin: -2px 0 2px;
-  border: 1px solid rgba(215, 25, 32, 0.14);
-  border-radius: 14px;
-  background: #fff7f7;
-  color: #8f1116;
-  padding: 10px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.45;
+  grid-column: 1 / -1;
+  margin: 6px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--red-050);
+  color: var(--red-700);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--red-100);
 }
 
-/* Digital signature upload and conditional footer signatory */
+/* ========================== SIGNATURE ========================== */
+
 .signatureUploadField {
   display: grid;
-  gap: 12px;
-  border: 1px solid rgba(17, 24, 39, 0.08);
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, #ffffff, #f9fafb);
-  padding: 14px;
+  gap: 14px;
+  padding: 18px;
+  border: 1px dashed var(--ink-200);
+  border-radius: var(--radius-lg);
+  background: var(--paper-warm);
 }
-
-.signatureUploadField strong {
+.signatureUploadField > div:first-child > strong {
   display: block;
-  color: #111827;
-  font-size: 13px;
-  line-height: 1.2;
+  font-size: 13.5px;
+  color: var(--ink-900);
+  margin-bottom: 4px;
+}
+.signatureUploadField > div:first-child > p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-400);
+  line-height: 1.5;
 }
 
-.signatureUploadField p {
-  margin: 5px 0 0;
-  color: #6b7280;
-  font-size: 12px;
-  font-weight: 650;
-  line-height: 1.45;
-}
+.signatureUploadActions { display: flex; flex-wrap: wrap; gap: 8px; }
 
-.signatureUploadActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.dangerBtn {
-  border-color: rgba(220, 38, 38, 0.22);
-  color: #b91c1c;
-  background: #fff7f7;
-}
-
-.dangerBtn:hover {
-  border-color: rgba(220, 38, 38, 0.4);
-  color: #991b1b;
-}
-
-.signatureUploadPreview {
-  display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
-  gap: 12px;
-  align-items: center;
-  border: 1px dashed rgba(17, 24, 39, 0.16);
-  border-radius: 16px;
-  background: #ffffff;
-  padding: 10px;
-}
-
-.signatureUploadPreview img {
-  width: 92px;
-  height: 42px;
-  object-fit: contain;
-  border-radius: 10px;
-  background: #ffffff;
-}
-
-.signatureUploadPreview span {
-  color: #4b5563;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
-.quotePremiumFooter.noSignature {
-  grid-template-columns: 1fr;
-}
-
-.quotePremiumFooter.noSignature .quoteFooterNote {
-  max-width: none;
-}
-
-.quotePremiumFooter.hasSignature {
-  grid-template-columns: 1fr 52mm;
-}
-
-.quotePremiumFooter.hasSignature .quoteSignature {
-  align-content: end;
-}
-
-.quotePremiumFooter.hasSignature .quoteSignature::before {
-  display: none;
-}
-
-.quoteSignatureImage {
-  display: block;
-  width: auto;
-  max-width: 39mm;
-  max-height: 12mm;
-  object-fit: contain;
-  margin: 0 0 1.25mm auto;
-}
-
-.proposalDocument.compactQuote .quotePremiumFooter.hasSignature {
-  grid-template-columns: 1fr 43mm;
-}
-
-.proposalDocument.compactQuote .quoteSignatureImage {
-  max-width: 32mm;
-  max-height: 9mm;
-  margin-bottom: 0.9mm;
-}
-
-@media print {
-  .quotePremiumFooter.noSignature {
-    grid-template-columns: 1fr !important;
-  }
-
-  .quotePremiumFooter.hasSignature {
-    grid-template-columns: 1fr 52mm !important;
-  }
-
-  .proposalDocument.compactQuote .quotePremiumFooter.hasSignature {
-    grid-template-columns: 1fr 43mm !important;
-  }
-}
-
-.qoInputGrid .fullWidth {
-  grid-column: 1 / -1;
-}
-
-
-/* Signature crop selection preview */
 .signatureCropPanel {
-  display: grid;
-  gap: 10px;
-  border: 1px solid rgba(215, 25, 32, 0.14);
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, #ffffff, #fffafa);
-  padding: 12px;
+  display: grid; gap: 12px;
+  padding: 14px;
+  background: #fff;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--ink-100);
 }
-
-.signatureCropHeader {
-  display: grid;
-  gap: 3px;
-}
-
 .signatureCropHeader strong {
-  color: #111827;
+  display: block;
   font-size: 13px;
-  line-height: 1.2;
+  color: var(--ink-900);
+  margin-bottom: 2px;
 }
-
 .signatureCropHeader span {
-  color: #6b7280;
   font-size: 12px;
-  font-weight: 700;
-  line-height: 1.35;
+  color: var(--ink-400);
 }
 
 .signatureCropStage {
   position: relative;
-  display: block;
-  width: 100%;
-  max-height: 260px;
-  overflow: auto;
-  border: 1px solid rgba(17, 24, 39, 0.14);
-  border-radius: 16px;
-  background:
-    linear-gradient(45deg, #f3f4f6 25%, transparent 25%),
-    linear-gradient(-45deg, #f3f4f6 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #f3f4f6 75%),
-    linear-gradient(-45deg, transparent 75%, #f3f4f6 75%);
-  background-color: #ffffff;
-  background-position:
-    0 0,
-    0 8px,
-    8px -8px,
-    -8px 0;
-  background-size: 16px 16px;
-  cursor: crosshair;
-  touch-action: none;
-  user-select: none;
+  background: repeating-conic-gradient(#f4f4f5 0 25%, #ffffff 0 50%) 50% / 16px 16px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--ink-100);
 }
-
-.signatureCropStage img {
-  display: block;
-  width: 100%;
-  height: auto;
-  object-fit: contain;
-  pointer-events: none;
-}
-
-.signatureCropBox {
-  position: absolute;
-  z-index: 2;
-  display: block;
-  min-width: 14px;
-  min-height: 14px;
-  border: 2px solid #d71920;
-  border-radius: 10px;
-  background: rgba(215, 25, 32, 0.12);
-  box-shadow:
-    0 0 0 9999px rgba(15, 23, 42, 0.34),
-    0 12px 28px rgba(15, 23, 42, 0.2);
-  pointer-events: none;
-}
-
-.signatureCropActions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
-
-.signatureCropActions span {
-  flex: 1 1 220px;
-  color: #8f1116;
-  font-size: 12px;
-  font-weight: 750;
-  line-height: 1.4;
-}
-
-.signatureUploadPreview img {
-  object-fit: contain;
-  background:
-    linear-gradient(45deg, #f8fafc 25%, transparent 25%),
-    linear-gradient(-45deg, #f8fafc 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #f8fafc 75%),
-    linear-gradient(-45deg, transparent 75%, #f8fafc 75%);
-  background-color: #ffffff;
-  background-position:
-    0 0,
-    0 6px,
-    6px -6px,
-    -6px 0;
-  background-size: 12px 12px;
-}
-
-/* Reliable PDF download export mode
-   Download PDF now renders the A4 quotation into a real PDF file with jsPDF.
-   These rules remove browser-only shadows/rounding during canvas capture so the
-   saved PDF opens cleanly in PDF viewers. */
-button:disabled,
-.smallBtn:disabled,
-.jsonDownloadBtn:disabled {
-  cursor: not-allowed;
-  opacity: 0.62;
-  transform: none !important;
-}
-
-body.pdfExporting {
-  background: #ffffff !important;
-}
-
-body.pdfExporting .proposalDocument {
-  width: 210mm !important;
-  height: 297mm !important;
-  min-height: 297mm !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-body.pdfExporting .qoPreviewColumn {
-  overflow: visible !important;
-}
-
-body.pdfExporting .printableArea {
-  isolation: isolate;
-}
-
-body.pdfExporting .proposalDocument::after {
-  color: rgba(15, 23, 42, 0.022) !important;
-}
-
-/* Exact signature crop fix
-   The crop box now sits on an image-sized frame, not on the scroll viewport.
-   This makes the selected area match the live quotation and downloaded PDF. */
-.signatureCropStage {
-  position: relative;
-  display: block;
-  width: 100%;
-  max-height: 280px;
-  overflow: auto;
-  border: 1px solid rgba(17, 24, 39, 0.14);
-  border-radius: 16px;
-  background:
-    linear-gradient(45deg, #f3f4f6 25%, transparent 25%),
-    linear-gradient(-45deg, #f3f4f6 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #f3f4f6 75%),
-    linear-gradient(-45deg, transparent 75%, #f3f4f6 75%);
-  background-color: #ffffff;
-  background-position:
-    0 0,
-    0 8px,
-    8px -8px,
-    -8px 0;
-  background-size: 16px 16px;
-  cursor: default;
-  user-select: none;
-}
-
 .signatureCropImageFrame {
   position: relative;
-  display: block;
   width: 100%;
-  min-width: 100%;
-  cursor: crosshair;
-  touch-action: none;
   user-select: none;
+  touch-action: none;
 }
-
 .signatureCropImageFrame img {
   display: block;
   width: 100%;
   height: auto;
-  object-fit: contain;
   pointer-events: none;
-  user-select: none;
 }
-
-.signatureCropImageFrame .signatureCropBox {
+.signatureCropBox {
   position: absolute;
-  z-index: 2;
-  display: block;
-  min-width: 14px;
-  min-height: 14px;
-  border: 2px solid #d71920;
-  border-radius: 10px;
-  background: rgba(215, 25, 32, 0.12);
-  box-shadow:
-    0 0 0 9999px rgba(15, 23, 42, 0.34),
-    0 12px 28px rgba(15, 23, 42, 0.2);
+  border: 2px solid var(--red-500);
+  background: rgba(220, 38, 38, 0.12);
+  box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.32);
   pointer-events: none;
+}
+.signatureCropActions {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  font-size: 12.5px; color: var(--ink-500);
 }
 
 .signatureUploadPreview {
-  grid-template-columns: 150px minmax(0, 1fr);
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: #fff;
+  border: 1px solid var(--ink-100);
 }
-
 .signatureUploadPreview img {
-  width: 150px;
-  height: 64px;
+  max-height: 56px;
+  max-width: 160px;
   object-fit: contain;
 }
-
-.quoteSignatureImage {
-  display: block;
-  width: auto;
-  height: auto;
-  max-width: 43mm;
-  max-height: 14mm;
-  object-fit: contain;
-  object-position: center;
-  margin: 0 0 1.25mm auto;
+.signatureUploadPreview span {
+  font-size: 12.5px; color: var(--ink-400);
 }
 
-.proposalDocument.compactQuote .quoteSignatureImage {
-  max-width: 35mm;
-  max-height: 10.5mm;
+/* ========================== LOADING / ERROR ========================== */
+
+.qoLoading {
+  padding: 18px;
+  border-radius: var(--radius-md);
+  background: var(--paper-tint);
+  border: 1px dashed var(--ink-200);
+  color: var(--ink-500);
+  font-size: 13px;
+  text-align: center;
+}
+.qoError {
+  padding: 14px 16px;
+  background: var(--red-050);
+  border: 1px solid var(--red-100);
+  color: var(--red-700);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
 }
 
-body.pdfExporting .quoteSignatureImage {
-  image-rendering: auto;
-}
+.jsonDownloadBtn { margin-top: 14px; }
 
-/* Premium selected signature display
-   The selected/cropped area is shown as a clean signature card with rounded
-   corners in both the live quotation and downloaded PDF. */
-.quotePremiumFooter.hasSignature {
-  grid-template-columns: 1fr 58mm;
-}
+/* =========================================================
+   QUOTATION PREVIEW · A4 PAGES
+   The .pdfPage MUST stay exactly 210mm × 297mm.
+   ========================================================= */
 
-.quotePremiumFooter.hasSignature .quoteSignature {
+.proposalBook {
   display: grid;
-  justify-items: end;
-  align-content: end;
-  gap: 0.85mm;
-  padding-left: 4mm;
+  gap: 22px;
+  justify-items: center;
 }
 
-.quoteSignatureImageFrame {
+.proposalDocument.pdfPage {
+  width: 210mm;
+  min-height: 297mm;
+  max-width: 100%;
+  background: #ffffff;
+  color: var(--ink-900);
+  padding: 18mm 16mm 18mm;
+  border-radius: 6px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 10mm;
+  position: relative;
+  font-family: var(--font-stack);
+  font-size: 11px;
+  line-height: 1.45;
+  overflow: hidden;
+}
+
+/* Scale preview pages down to fit narrow screens */
+@media (max-width: 1280px) {
+  .proposalBook .pdfPage { transform: scale(0.85); transform-origin: top center; margin-bottom: -10vh; }
+}
+@media (max-width: 900px) {
+  .proposalBook .pdfPage { transform: scale(0.6); margin-bottom: -28vh; }
+}
+
+/* While exporting, no scaling */
+body.pdfExporting .proposalBook .pdfPage { transform: none !important; margin-bottom: 0 !important; }
+.qoPage.pdfMode .qoFormColumn { display: none; }
+.qoPage.pdfMode .qoPreviewColumn { position: static; }
+.qoPage.pdfMode .qoMain { grid-template-columns: 1fr; }
+
+/* ---------- Top bar ---------- */
+
+.quoteTopBar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 14mm;
+  align-items: flex-start;
+  padding-bottom: 6mm;
+  border-bottom: 1px solid var(--ink-100);
+}
+.quoteTopBarSlim { padding-bottom: 5mm; }
+
+.quoteBrandBlock {
+  display: flex;
+  align-items: center;
+  gap: 5mm;
+}
+.quoteLogoBox {
+  width: 18mm;
+  height: 18mm;
+  min-width: 18mm;
+  min-height: 18mm;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 42mm;
-  height: 15mm;
-  overflow: hidden;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  border-radius: 3.1mm;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.9));
-  padding: 1.2mm;
-  box-shadow:
-    0 5px 14px rgba(15, 23, 42, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
-}
-
-.quoteSignatureImageFrame .quoteSignatureImage,
-.quoteSignatureImage {
-  display: block;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-  object-fit: contain;
-  object-position: center;
-  border-radius: 2.1mm;
-  margin: 0;
-}
-
-.quotePremiumFooter .quoteSignature span {
-  max-width: 48mm;
-  text-align: right;
-  line-height: 1.12;
-}
-
-.quotePremiumFooter .quoteSignature strong {
-  margin-top: 0;
-  text-align: right;
-}
-
-.proposalDocument.compactQuote .quotePremiumFooter.hasSignature {
-  grid-template-columns: 1fr 49mm;
-}
-
-.proposalDocument.compactQuote .quoteSignatureImageFrame {
-  width: 35mm;
-  height: 12mm;
-  border-radius: 2.6mm;
-  padding: 0.9mm;
-}
-
-.proposalDocument.compactQuote .quoteSignatureImageFrame .quoteSignatureImage,
-.proposalDocument.compactQuote .quoteSignatureImage {
-  border-radius: 1.8mm;
-}
-
-/* Cleaner selected-area preview in the left form */
-.signatureUploadPreview {
-  grid-template-columns: 168px minmax(0, 1fr);
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, #ffffff, #fbfcff);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
-}
-
-.signatureUploadPreview img {
-  width: 168px;
-  height: 74px;
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: 16px;
-  padding: 8px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
-}
-
-.signatureCropImageFrame .signatureCropBox {
-  border-radius: 16px;
-  border-width: 2.5px;
-}
-
-@media print {
-  .quotePremiumFooter.hasSignature {
-    grid-template-columns: 1fr 58mm !important;
-  }
-
-  .proposalDocument.compactQuote .quotePremiumFooter.hasSignature {
-    grid-template-columns: 1fr 49mm !important;
-  }
-
-  .quoteSignatureImageFrame {
-    box-shadow: none !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-}
-
-body.pdfExporting .quoteSignatureImageFrame {
-  box-shadow: none !important;
-}
-
-
-/* Final polish: rounded selected signature image + fixed Terms section fit
-   Keeps the signature photo corners softly rounded inside the parent card and
-   prevents the Terms & Conditions panel from touching/clipping the footer. */
-.quotePremiumFooter.hasSignature {
-  grid-template-columns: 1fr 56mm;
-  gap: 4mm;
-  padding: 2.35mm 2.75mm;
-}
-
-.quotePremiumFooter.hasSignature .quoteSignature {
-  display: grid;
-  justify-items: end;
-  align-content: center;
-  gap: 0.72mm;
-  min-width: 0;
-  padding-left: 3mm;
-}
-
-.quoteSignatureImageFrame {
-  width: 39mm;
-  height: 14.2mm;
-  overflow: hidden;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  border-radius: 2.8mm;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(248, 250, 252, 0.92));
-  padding: 0.85mm;
-  box-shadow:
-    0 5px 13px rgba(15, 23, 42, 0.075),
-    inset 0 1px 0 rgba(255, 255, 255, 0.96);
-}
-
-.quoteSignatureImageFrame .quoteSignatureImage,
-.quoteSignatureImage {
-  display: block;
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  max-height: none;
-  object-fit: contain;
-  object-position: center;
-  border-radius: 2mm;
-  clip-path: inset(0 round 2mm);
-  margin: 0;
-}
-
-.quotePremiumFooter .quoteSignature span {
-  max-width: 46mm;
-  text-align: right;
-  line-height: 1.08;
-}
-
-.quotePremiumFooter .quoteSignature strong {
-  margin-top: 0;
-  text-align: right;
-}
-
-.proposalDocument.compactQuote .quotePremiumFooter.hasSignature {
-  grid-template-columns: 1fr 47mm;
-  gap: 3mm;
-  padding: 1.75mm 2.2mm;
-}
-
-.proposalDocument.compactQuote .quoteSignatureImageFrame {
-  width: 32mm;
-  height: 10.8mm;
-  border-radius: 2.35mm;
-  padding: 0.7mm;
-}
-
-.proposalDocument.compactQuote .quoteSignatureImageFrame .quoteSignatureImage,
-.proposalDocument.compactQuote .quoteSignatureImage {
-  border-radius: 1.65mm;
-  clip-path: inset(0 round 1.65mm);
-}
-
-/* Stable Terms & Conditions sizing */
-.quoteTermsPanel {
-  overflow: hidden;
-  padding: 2.55mm 2.85mm 2.75mm 3.15mm;
   border-radius: 4mm;
+  background: #fff;
+  border: 1px solid var(--ink-100);
+  overflow: hidden;
+  flex-shrink: 0;
 }
-
-.quoteTermsHeader {
-  margin-bottom: 1.65mm;
-  gap: 3mm;
-}
-
-.quoteTermsHeader span {
-  margin-bottom: 0.45mm;
-  font-size: 5.45pt;
-}
-
-.quoteTermsHeader h3 {
-  font-size: 9.6pt;
-}
-
-.quoteTermsHeader strong {
-  min-height: 5.8mm;
-  padding: 1.15mm 2.15mm;
-  font-size: 5.75pt;
-}
-
-.quoteTermsBody {
-  padding-left: 0.6mm;
-}
-
-.quoteTermsTimeline {
-  gap: 0.72mm;
-}
-
-.quoteTermsTimeline li {
-  grid-template-columns: 5.6mm minmax(0, 1fr);
-  gap: 1.45mm;
-  align-items: center;
-  min-height: 6.35mm;
-  padding: 0.82mm 1.45mm;
-  border-radius: 2.45mm;
-  overflow: visible;
-}
-
-.quoteTermsTimeline li::before {
-  left: 4.25mm;
-  top: 4.6mm;
-  bottom: -0.95mm;
-  width: 0.4mm;
-}
-
-.quoteTermDot {
-  width: 2.9mm;
-  height: 2.9mm;
-  margin-top: 0;
-  border-width: 0.72mm;
-  box-shadow:
-    0 0 0 0.55mm #fff5f5,
-    0 4px 9px rgba(215, 25, 32, 0.18);
-}
-
-.quoteTermsTimeline p {
-  font-size: 5.82pt;
-  line-height: 1.13;
-}
-
-.proposalDocument.compactQuote .quoteTermsPanel {
-  padding: 1.75mm 2mm 1.95mm 2.75mm;
-  border-radius: 3.2mm;
-}
-
-.proposalDocument.compactQuote .quoteTermsHeader {
-  margin-bottom: 0.85mm;
-}
-
-.proposalDocument.compactQuote .quoteTermsHeader span {
-  margin-bottom: 0.25mm;
-  font-size: 4.85pt;
-}
-
-.proposalDocument.compactQuote .quoteTermsHeader h3 {
-  font-size: 8pt;
-}
-
-.proposalDocument.compactQuote .quoteTermsHeader strong {
-  min-height: 4.7mm;
-  padding: 0.8mm 1.65mm;
-  font-size: 4.95pt;
-}
-
-.proposalDocument.compactQuote .quoteTermsTimeline {
-  gap: 0.48mm;
-}
-
-.proposalDocument.compactQuote .quoteTermsTimeline li {
-  grid-template-columns: 4.7mm minmax(0, 1fr);
-  gap: 0.92mm;
-  min-height: 4.95mm;
-  padding: 0.48mm 0.95mm;
-  border-radius: 1.95mm;
-}
-
-.proposalDocument.compactQuote .quoteTermsTimeline li::before {
-  left: 3.55mm;
-  top: 3.65mm;
-  bottom: -0.65mm;
-  width: 0.35mm;
-}
-
-.proposalDocument.compactQuote .quoteTermDot {
-  width: 2.35mm;
-  height: 2.35mm;
-  border-width: 0.62mm;
-  box-shadow:
-    0 0 0 0.45mm #fff5f5,
-    0 3px 7px rgba(215, 25, 32, 0.14);
-}
-
-.proposalDocument.compactQuote .quoteTermsTimeline p {
-  font-size: 4.92pt;
-  line-height: 1.02;
-}
-
-/* Keep footer and terms from visually colliding on A4/canvas export. */
-.proposalDocument.compactQuote {
-  gap: 1.85mm;
-}
-
-.proposalDocument.compactQuote .quotePremiumFooter {
-  margin-top: auto;
-}
-
-body.pdfExporting .quoteSignatureImageFrame {
-  box-shadow: none !important;
-}
-
-@media print {
-  .quoteSignatureImageFrame {
-    box-shadow: none !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  .quoteTermsPanel {
-    overflow: hidden !important;
-  }
-
-  .quotePremiumFooter.hasSignature {
-    grid-template-columns: 1fr 56mm !important;
-  }
-
-  .proposalDocument.compactQuote .quotePremiumFooter.hasSignature {
-    grid-template-columns: 1fr 47mm !important;
-  }
-}
-
-
-/* Final no-gap footer placement
-   Removes the unwanted empty space between Terms & Conditions and footer.
-   The footer now follows immediately after the terms panel in the live preview,
-   print layout, and downloaded PDF. */
-.proposalDocument .quotePremiumFooter,
-.proposalDocument.compactQuote .quotePremiumFooter,
-.proposalDocument .quoteFooter.quotePremiumFooter,
-.proposalDocument.compactQuote .quoteFooter.quotePremiumFooter {
-  margin-top: 0 !important;
-}
-
-.proposalDocument .quoteTermsPanel + .quotePremiumFooter,
-.proposalDocument.compactQuote .quoteTermsPanel + .quotePremiumFooter {
-  margin-top: 0 !important;
-}
-
-/* Keep only a clean, controlled spacing between Terms & Conditions and footer. */
-.proposalDocument {
-  gap: 2mm;
-}
-
-.proposalDocument.compactQuote {
-  gap: 1.35mm;
-}
-
-/* Avoid the footer being pushed to the bottom during PDF/canvas export. */
-body.pdfExporting .quotePremiumFooter,
-body.pdfExporting .quoteFooter.quotePremiumFooter {
-  margin-top: 0 !important;
-}
-
-@media print {
-  .quotePremiumFooter,
-  .quoteFooter.quotePremiumFooter {
-    margin-top: 0 !important;
-  }
-
-  .proposalDocument {
-    gap: 2mm !important;
-  }
-
-  .proposalDocument.compactQuote {
-    gap: 1.35mm !important;
-  }
-}
-
-/* Final fixed footer placement
-   Keeps the Terms & Conditions + footer as a bottom group inside the A4 page.
-   This removes the unwanted white space after the footer while keeping the
-   footer card width fixed and PDF/print friendly. */
-.proposalDocument {
-  gap: 1.45mm;
-}
-
-.proposalDocument.compactQuote {
-  gap: 1.05mm;
-}
-
-.proposalDocument .quoteTermsPanel,
-.proposalDocument.compactQuote .quoteTermsPanel {
-  margin-top: 10px !important;
-}
-
-.proposalDocument .quoteTermsPanel + .quotePremiumFooter,
-.proposalDocument .quoteTermsPanel + .quoteFooter.quotePremiumFooter {
-  margin-top: 10px !important;
-}
-
-.proposalDocument.compactQuote .quoteTermsPanel + .quotePremiumFooter,
-.proposalDocument.compactQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter {
-  margin-top: -1.05mm !important;
-}
-
-.proposalDocument .quotePremiumFooter,
-.proposalDocument .quoteFooter.quotePremiumFooter,
-.proposalDocument.compactQuote .quotePremiumFooter,
-.proposalDocument.compactQuote .quoteFooter.quotePremiumFooter {
-  width: 100%;
-  flex: 0 0 auto;
-  align-self: stretch;
-}
-
-.proposalDocument .quotePremiumFooter.hasSignature,
-.proposalDocument.compactQuote .quotePremiumFooter.hasSignature {
-  align-items: center;
-}
-
-/* Remove bottom visual looseness inside the footer card itself. */
-.quotePremiumFooter {
-  min-height: auto;
-}
-
-.quotePremiumFooter .quoteFooterNote,
-.quotePremiumFooter .quoteSignature {
-  min-height: 0;
-}
-
-.quotePremiumFooter .quoteSignature {
-  align-content: center;
-}
-
-body.pdfExporting .quoteTermsPanel {
-  margin-top: auto !important;
-}
-
-body.pdfExporting .quoteTermsPanel + .quotePremiumFooter,
-body.pdfExporting .quoteTermsPanel + .quoteFooter.quotePremiumFooter {
-  margin-top: -1.45mm !important;
-}
-
-body.pdfExporting .proposalDocument.compactQuote .quoteTermsPanel + .quotePremiumFooter,
-body.pdfExporting .proposalDocument.compactQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter {
-  margin-top: -1.05mm !important;
-}
-
-@media print {
-  .proposalDocument {
-    gap: 1.45mm !important;
-  }
-
-  .proposalDocument.compactQuote {
-    gap: 1.05mm !important;
-  }
-
-  .quoteTermsPanel {
-    margin-top: auto !important;
-  }
-
-  .quoteTermsPanel + .quotePremiumFooter,
-  .quoteTermsPanel + .quoteFooter.quotePremiumFooter {
-    margin-top: -1.45mm !important;
-  }
-
-  .proposalDocument.compactQuote .quoteTermsPanel + .quotePremiumFooter,
-  .proposalDocument.compactQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter {
-    margin-top: -1.05mm !important;
-  }
-
-  .quotePremiumFooter,
-  .quoteFooter.quotePremiumFooter {
-    width: 100% !important;
-    flex: 0 0 auto !important;
-    align-self: stretch !important;
-  }
-}
-
-/* =========================================================
-   FINAL FIX: Readable Terms & Conditions in right preview/PDF
-   ---------------------------------------------------------
-   Previous compact quotation rules reduced Terms text to ~4.9pt,
-   which made the right-side quotation preview look too small.
-   These final overrides keep the Terms section premium, readable,
-   and stable in live preview, print, and PDF export.
-   ========================================================= */
-
-.proposalDocument .quoteTermsPanel,
-.proposalDocument.compactQuote .quoteTermsPanel {
-  padding: 2.6mm 3mm 2.8mm 3.25mm !important;
-  border-radius: 4mm !important;
-  overflow: hidden !important;
-}
-
-.proposalDocument .quoteTermsHeader,
-.proposalDocument.compactQuote .quoteTermsHeader {
-  align-items: flex-start !important;
-  gap: 3mm !important;
-  margin-bottom: 1.55mm !important;
-  padding-left: 0.8mm !important;
-}
-
-.proposalDocument .quoteTermsHeader span,
-.proposalDocument.compactQuote .quoteTermsHeader span {
-  margin-bottom: 0.45mm !important;
-  font-size: 5.8pt !important;
-  line-height: 1 !important;
-  letter-spacing: 0.11em !important;
-}
-
-.proposalDocument .quoteTermsHeader h3,
-.proposalDocument.compactQuote .quoteTermsHeader h3 {
-  font-size: 9.8pt !important;
-  line-height: 1.05 !important;
-  letter-spacing: -0.025em !important;
-}
-
-.proposalDocument .quoteTermsHeader strong,
-.proposalDocument.compactQuote .quoteTermsHeader strong {
-  min-height: 5.9mm !important;
-  padding: 1.15mm 2.3mm !important;
-  font-size: 5.9pt !important;
-  line-height: 1 !important;
-  white-space: nowrap !important;
-}
-
-.proposalDocument .quoteTermsBody,
-.proposalDocument.compactQuote .quoteTermsBody {
-  padding-left: 0.75mm !important;
-}
-
-.proposalDocument .quoteTermsTimeline,
-.proposalDocument.compactQuote .quoteTermsTimeline {
-  width: 100% !important;
-  gap: 0.78mm !important;
-}
-
-.proposalDocument .quoteTermsTimeline li,
-.proposalDocument.compactQuote .quoteTermsTimeline li {
-  grid-template-columns: 5.8mm minmax(0, 1fr) !important;
-  gap: 1.5mm !important;
-  align-items: center !important;
-  min-height: 6.7mm !important;
-  padding: 0.88mm 1.55mm !important;
-  border-radius: 2.45mm !important;
-}
-
-.proposalDocument .quoteTermsTimeline li::before,
-.proposalDocument.compactQuote .quoteTermsTimeline li::before {
-  left: 4.36mm !important;
-  top: 4.85mm !important;
-  bottom: -0.98mm !important;
-  width: 0.42mm !important;
-}
-
-.proposalDocument .quoteTermDot,
-.proposalDocument.compactQuote .quoteTermDot {
-  width: 3mm !important;
-  height: 3mm !important;
-  margin-top: 0 !important;
-  border-width: 0.72mm !important;
-  box-shadow:
-    0 0 0 0.55mm #fff5f5,
-    0 4px 9px rgba(215, 25, 32, 0.18) !important;
-}
-
-.proposalDocument .quoteTermsTimeline p,
-.proposalDocument.compactQuote .quoteTermsTimeline p {
-  margin: 0 !important;
-  color: #27364a !important;
-  font-size: 6pt !important;
-  font-weight: 800 !important;
-  line-height: 1.17 !important;
-}
-
-/* Keep the bottom group neat without shrinking the Terms section again. */
-.proposalDocument .quoteTermsPanel + .quotePremiumFooter,
-.proposalDocument .quoteTermsPanel + .quoteFooter.quotePremiumFooter,
-.proposalDocument.compactQuote .quoteTermsPanel + .quotePremiumFooter,
-.proposalDocument.compactQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter {
-  margin-top: -0.35mm !important;
-}
-
-/* PDF / print should use the same readable Terms sizing. */
-body.pdfExporting .quoteTermsPanel,
-body.pdfExporting .proposalDocument.compactQuote .quoteTermsPanel {
-  margin-top: auto !important;
-}
-
-body.pdfExporting .quoteTermsPanel + .quotePremiumFooter,
-body.pdfExporting .quoteTermsPanel + .quoteFooter.quotePremiumFooter,
-body.pdfExporting .proposalDocument.compactQuote .quoteTermsPanel + .quotePremiumFooter,
-body.pdfExporting .proposalDocument.compactQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter {
-  margin-top: -0.35mm !important;
-}
-
-@media print {
-  .proposalDocument .quoteTermsPanel,
-  .proposalDocument.compactQuote .quoteTermsPanel {
-    padding: 2.6mm 3mm 2.8mm 3.25mm !important;
-    overflow: hidden !important;
-  }
-
-  .proposalDocument .quoteTermsHeader h3,
-  .proposalDocument.compactQuote .quoteTermsHeader h3 {
-    font-size: 9.8pt !important;
-  }
-
-  .proposalDocument .quoteTermsHeader strong,
-  .proposalDocument.compactQuote .quoteTermsHeader strong {
-    font-size: 5.9pt !important;
-  }
-
-  .proposalDocument .quoteTermsTimeline li,
-  .proposalDocument.compactQuote .quoteTermsTimeline li {
-    min-height: 6.7mm !important;
-    padding: 0.88mm 1.55mm !important;
-  }
-
-  .proposalDocument .quoteTermsTimeline p,
-  .proposalDocument.compactQuote .quoteTermsTimeline p {
-    font-size: 6pt !important;
-    line-height: 1.17 !important;
-  }
-
-  .quoteTermsPanel + .quotePremiumFooter,
-  .quoteTermsPanel + .quoteFooter.quotePremiumFooter,
-  .proposalDocument.compactQuote .quoteTermsPanel + .quotePremiumFooter,
-  .proposalDocument.compactQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter {
-    margin-top: -0.35mm !important;
-  }
-}
-
-/* =========================================================
-   FINAL FIX: Adaptive bottom spacing for add-on/no-add-on states
-   ---------------------------------------------------------
-   The quotation is still a fixed A4 sheet, but the Terms + Footer
-   group is anchored to the bottom so unused A4 space never appears
-   after the footer. Also, compact mode is now controlled from TSX
-   only by commercial table density, not by signature upload alone.
-   ========================================================= */
-
-.proposalDocument,
-.proposalDocument.compactQuote {
-  justify-content: flex-start !important;
-}
-
-/* Push the complete bottom group down instead of leaving blank space after it. */
-.proposalDocument .quoteTermsPanel,
-.proposalDocument.compactQuote .quoteTermsPanel {
-  margin-top: auto !important;
-}
-
-/* Keep Terms and footer visually attached as one clean bottom block. */
-.proposalDocument .quoteTermsPanel + .quotePremiumFooter,
-.proposalDocument .quoteTermsPanel + .quoteFooter.quotePremiumFooter,
-.proposalDocument.compactQuote .quoteTermsPanel + .quotePremiumFooter,
-.proposalDocument.compactQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter {
-  margin-top: -0.35mm !important;
-}
-
-/* Normal quotations should stay roomy and readable when add-ons are not selected. */
-.proposalDocument:not(.compactQuote) {
-  gap: 1.65mm !important;
-}
-
-.proposalDocument:not(.compactQuote) .quoteTableCard {
-  flex: 0 0 auto !important;
-}
-
-.proposalDocument:not(.compactQuote) .quoteTermsPanel {
-  padding: 2.7mm 3.05mm 2.85mm 3.25mm !important;
-}
-
-.proposalDocument:not(.compactQuote) .quotePremiumFooter {
-  flex: 0 0 auto !important;
-  width: 100% !important;
-  align-self: stretch !important;
-}
-
-.proposalDocument:not(.compactQuote) .quotePremiumFooter.hasSignature {
-  grid-template-columns: 1fr 56mm !important;
-  gap: 4mm !important;
-  padding: 2.25mm 2.7mm !important;
-}
-
-.proposalDocument:not(.compactQuote) .quoteSignatureImageFrame {
-  width: 38mm !important;
-  height: 13.6mm !important;
-}
-
-/* Dense add-on quotations keep the compact table, but still remove bottom blank space. */
-.proposalDocument.compactQuote .quoteTermsPanel {
-  margin-top: auto !important;
-}
-
-body.pdfExporting .proposalDocument .quoteTermsPanel,
-body.pdfExporting .proposalDocument.compactQuote .quoteTermsPanel {
-  margin-top: auto !important;
-}
-
-body.pdfExporting .proposalDocument .quoteTermsPanel + .quotePremiumFooter,
-body.pdfExporting .proposalDocument .quoteTermsPanel + .quoteFooter.quotePremiumFooter,
-body.pdfExporting .proposalDocument.compactQuote .quoteTermsPanel + .quotePremiumFooter,
-body.pdfExporting .proposalDocument.compactQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter {
-  margin-top: -0.35mm !important;
-}
-
-@media print {
-  .proposalDocument .quoteTermsPanel,
-  .proposalDocument.compactQuote .quoteTermsPanel {
-    margin-top: auto !important;
-  }
-
-  .proposalDocument .quoteTermsPanel + .quotePremiumFooter,
-  .proposalDocument .quoteTermsPanel + .quoteFooter.quotePremiumFooter,
-  .proposalDocument.compactQuote .quoteTermsPanel + .quotePremiumFooter,
-  .proposalDocument.compactQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter {
-    margin-top: -0.35mm !important;
-  }
-
-  .proposalDocument:not(.compactQuote) {
-    gap: 1.65mm !important;
-  }
-
-  .proposalDocument:not(.compactQuote) .quotePremiumFooter.hasSignature {
-    grid-template-columns: 1fr 56mm !important;
-  }
-}
-
-
-/* =========================================================
-   FINAL FIX: No-signature add-on layout spacing
-   ---------------------------------------------------------
-   When all add-ons are selected and no digital signature is uploaded,
-   the footer is shorter. Earlier rules pushed the Terms + Footer group
-   to the bottom with margin-top:auto, which created a large blank area
-   between the commercial table and Terms & Conditions.
-
-   This override keeps the table, Terms, and footer visually continuous
-   when there is no signature. When a signature exists, the existing
-   bottom-balanced layout remains unchanged because the taller signature
-   footer naturally fills the A4 height.
-   ========================================================= */
-
-.proposalDocument.noSignatureQuote .quoteTermsPanel,
-.proposalDocument.noSignatureQuote.compactQuote .quoteTermsPanel,
-body.pdfExporting .proposalDocument.noSignatureQuote .quoteTermsPanel,
-body.pdfExporting .proposalDocument.noSignatureQuote.compactQuote .quoteTermsPanel {
-  margin-top: 1.15mm !important;
-}
-
-.proposalDocument.noSignatureQuote .quoteTermsPanel + .quotePremiumFooter,
-.proposalDocument.noSignatureQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter,
-.proposalDocument.noSignatureQuote.compactQuote .quoteTermsPanel + .quotePremiumFooter,
-.proposalDocument.noSignatureQuote.compactQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter,
-body.pdfExporting .proposalDocument.noSignatureQuote .quoteTermsPanel + .quotePremiumFooter,
-body.pdfExporting .proposalDocument.noSignatureQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter,
-body.pdfExporting .proposalDocument.noSignatureQuote.compactQuote .quoteTermsPanel + .quotePremiumFooter,
-body.pdfExporting .proposalDocument.noSignatureQuote.compactQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter {
-  margin-top: 1.05mm !important;
-}
-
-.proposalDocument.noSignatureQuote.compactQuote {
-  gap: 1.05mm !important;
-}
-
-.proposalDocument.noSignatureQuote.compactQuote .quoteTableCard {
-  flex: 0 0 auto !important;
-}
-
-.proposalDocument.noSignatureQuote.compactQuote .quotePremiumFooter.noSignature {
-  min-height: 10.5mm !important;
-  padding: 1.7mm 2.35mm !important;
-}
-
-.proposalDocument.noSignatureQuote.compactQuote .quotePremiumFooter.noSignature .quoteFooterNote strong {
-  margin-top: 0.35mm !important;
-}
-
-/* Signature quotations can keep the existing balanced A4 placement. */
-.proposalDocument.hasSignatureQuote .quoteTermsPanel,
-.proposalDocument.hasSignatureQuote.compactQuote .quoteTermsPanel,
-body.pdfExporting .proposalDocument.hasSignatureQuote .quoteTermsPanel,
-body.pdfExporting .proposalDocument.hasSignatureQuote.compactQuote .quoteTermsPanel {
-  margin-top: auto !important;
-}
-
-@media print {
-  .proposalDocument.noSignatureQuote .quoteTermsPanel,
-  .proposalDocument.noSignatureQuote.compactQuote .quoteTermsPanel {
-    margin-top: 1.15mm !important;
-  }
-
-  .proposalDocument.noSignatureQuote .quoteTermsPanel + .quotePremiumFooter,
-  .proposalDocument.noSignatureQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter,
-  .proposalDocument.noSignatureQuote.compactQuote .quoteTermsPanel + .quotePremiumFooter,
-  .proposalDocument.noSignatureQuote.compactQuote .quoteTermsPanel + .quoteFooter.quotePremiumFooter {
-    margin-top: 1.05mm !important;
-  }
-
-  .proposalDocument.hasSignatureQuote .quoteTermsPanel,
-  .proposalDocument.hasSignatureQuote.compactQuote .quoteTermsPanel {
-    margin-top: auto !important;
-  }
-}
-
-/* =========================================================
-   FINAL FIX: PDF header logo + quotation meta visibility
-   ---------------------------------------------------------
-   Keeps the logo sharp/natural in downloaded PDFs and prevents the
-   third meta row (Valid Until) from being clipped by the top header.
-   ========================================================= */
-.quoteTopBar,
-.proposalDocument.compactQuote .quoteTopBar {
-  overflow: visible !important;
-  align-items: center !important;
-}
-
-.quoteTopBar {
-  grid-template-columns: minmax(0, 1fr) 64mm !important;
-  min-height: 25.5mm !important;
-  padding: 3.4mm 4mm !important;
-}
-
-.proposalDocument.compactQuote .quoteTopBar {
-  grid-template-columns: minmax(0, 1fr) 62mm !important;
-  min-height: 22.5mm !important;
-  padding: 2.45mm 3.2mm !important;
-}
-
-.quoteBrandBlock,
-.proposalDocument.compactQuote .quoteBrandBlock {
-  min-width: 0 !important;
-  align-items: center !important;
-}
-
-.quoteBrandBlock {
-  grid-template-columns: 18mm minmax(0, 1fr) !important;
-  gap: 3.2mm !important;
-}
-
-.proposalDocument.compactQuote .quoteBrandBlock {
-  grid-template-columns: 15mm minmax(0, 1fr) !important;
-  gap: 2.6mm !important;
-}
-
-.quoteLogoBox {
-  width: 18mm !important;
-  height: 18mm !important;
-  min-width: 18mm !important;
-  min-height: 18mm !important;
-  padding: 2mm !important;
-  overflow: hidden !important;
-}
-
-.proposalDocument.compactQuote .quoteLogoBox {
-  width: 15mm !important;
-  height: 15mm !important;
-  min-width: 15mm !important;
-  min-height: 15mm !important;
-  padding: 1.55mm !important;
-}
-
 .quoteLogoBox img,
-.proposalDocument.compactQuote .quoteLogoBox img,
-body.pdfExporting .quoteLogoBox img,
-body.pdfExporting .proposalDocument.compactQuote .quoteLogoBox img {
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
-  object-fit: contain !important;
-  object-position: center center !important;
-  transform: none !important;
-}
-
-.quoteBrandBlock h1 {
-  max-width: 100% !important;
-  overflow-wrap: normal !important;
-  white-space: nowrap !important;
-  font-size: 18pt !important;
-  line-height: 1.02 !important;
-}
-
-.proposalDocument.compactQuote .quoteBrandBlock h1 {
-  font-size: 15.7pt !important;
-  line-height: 1.02 !important;
-}
-
-.quoteMetaBox,
-.proposalDocument.compactQuote .quoteMetaBox,
-body.pdfExporting .quoteMetaBox,
-body.pdfExporting .proposalDocument.compactQuote .quoteMetaBox {
-  align-self: center !important;
-  align-content: center !important;
-  gap: 1.05mm !important;
-  min-height: auto !important;
-  overflow: visible !important;
-}
-
-.quoteMetaBox div,
-.proposalDocument.compactQuote .quoteMetaBox div,
-body.pdfExporting .quoteMetaBox div,
-body.pdfExporting .proposalDocument.compactQuote .quoteMetaBox div {
-  grid-template-columns: 24mm minmax(0, 1fr) !important;
-  min-height: 5.15mm !important;
-  padding: 0.82mm 2mm !important;
-  overflow: visible !important;
-}
-
-.quoteMetaBox span,
-.proposalDocument.compactQuote .quoteMetaBox span {
-  line-height: 1 !important;
-}
-
-.quoteMetaBox strong,
-.proposalDocument.compactQuote .quoteMetaBox strong,
-body.pdfExporting .quoteMetaBox strong,
-body.pdfExporting .proposalDocument.compactQuote .quoteMetaBox strong {
-  display: block !important;
-  line-height: 1.05 !important;
-  white-space: nowrap !important;
-  overflow: visible !important;
-}
-
-body.pdfExporting .quoteTopBar {
-  min-height: 25.5mm !important;
-  overflow: visible !important;
-}
-
-body.pdfExporting .proposalDocument.compactQuote .quoteTopBar {
-  min-height: 22.5mm !important;
-  overflow: visible !important;
-}
-
-@media print {
-  .quoteTopBar {
-    min-height: 25.5mm !important;
-    overflow: visible !important;
-  }
-
-  .proposalDocument.compactQuote .quoteTopBar {
-    min-height: 22.5mm !important;
-    overflow: visible !important;
-  }
-
-  .quoteLogoBox img,
-  .proposalDocument.compactQuote .quoteLogoBox img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
-    object-position: center center !important;
-  }
-
-  .quoteMetaBox,
-  .proposalDocument.compactQuote .quoteMetaBox,
-  .quoteMetaBox div,
-  .proposalDocument.compactQuote .quoteMetaBox div,
-  .quoteMetaBox strong,
-  .proposalDocument.compactQuote .quoteMetaBox strong {
-    overflow: visible !important;
-  }
-}
-
-/* =========================================================
-   FINAL TWO-PAGE QUOTATION LAYOUT
-   ---------------------------------------------------------
-   The quotation is now rendered as two independent A4 pages.
-   Page 1 contains the header, client/campaign details and
-   commercial table. Page 2 contains summary, scope, terms and
-   signatory/footer. Each page is captured separately for PDF,
-   preventing logo distortion, hidden Valid Until values and
-   one-page clipping issues.
-   ========================================================= */
-.proposalBook {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  width: 210mm;
-  flex: 0 0 auto;
-}
-
-.proposalBook .proposalDocument,
-.proposalBook .proposalDocument.pdfPage,
-body.pdfExporting .proposalBook .proposalDocument,
-body.pdfExporting .proposalBook .proposalDocument.pdfPage {
-  position: relative !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: flex-start !important;
-  width: 210mm !important;
-  height: 297mm !important;
-  min-height: 297mm !important;
-  max-height: 297mm !important;
-  overflow: hidden !important;
-  padding: 8mm !important;
-  gap: 3.2mm !important;
-  border-radius: 22px;
-  background: #ffffff;
-}
-
-.proposalBook .proposalDocument.pdfPage::before {
-  height: 1.7mm !important;
-}
-
-.proposalBook .quoteTopBar,
-.proposalBook .quoteTopBarSmall,
-body.pdfExporting .proposalBook .quoteTopBar,
-body.pdfExporting .proposalBook .quoteTopBarSmall {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) 66mm !important;
-  align-items: center !important;
-  min-height: 27mm !important;
-  height: auto !important;
-  overflow: visible !important;
-  padding: 4.2mm 5mm !important;
-  gap: 5mm !important;
-}
-
-.proposalBook .quoteTopBarSmall {
-  min-height: 24mm !important;
-}
-
-.proposalBook .quoteBrandBlock {
-  display: grid !important;
-  grid-template-columns: 17mm minmax(0, 1fr) !important;
-  align-items: center !important;
-  gap: 4mm !important;
-  min-width: 0 !important;
-}
-
-.proposalBook .quoteLogoBox,
-body.pdfExporting .proposalBook .quoteLogoBox {
-  width: 17mm !important;
-  height: 17mm !important;
-  min-width: 17mm !important;
-  min-height: 17mm !important;
-  padding: 1.7mm !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  overflow: hidden !important;
-  border-radius: 4.2mm !important;
-}
-
-
-.proposalBook .quoteLogoBox img,
-body.pdfExporting .proposalBook .quoteLogoBox img {
-  display: block !important;
+.quoteLogoImage {
+  display: block;
   width: auto !important;
   height: auto !important;
-  max-width: 13.2mm !important;
-  max-height: 13.2mm !important;
-  object-fit: contain !important;
-  object-position: center !important;
-  aspect-ratio: auto !important;
-  transform: none !important;
+  max-width: 13.5mm !important;
+  max-height: 13.5mm !important;
+  object-fit: contain;
+  object-position: center;
 }
-
-.proposalBook .quoteBrandBlock h1,
-body.pdfExporting .proposalBook .quoteBrandBlock h1 {
-  margin: 1mm 0 0 !important;
-  font-size: 18pt !important;
-  line-height: 1.05 !important;
-  letter-spacing: -0.045em !important;
-  white-space: normal !important;
+body.pdfExporting .quoteLogoBox {
+  width: 18mm !important;
+  height: 18mm !important;
 }
-
-.proposalBook .quoteTopBarSmall .quoteBrandBlock h1,
-body.pdfExporting .proposalBook .quoteTopBarSmall .quoteBrandBlock h1 {
-  font-size: 16pt !important;
-}
-
-.proposalBook .quoteMetaBox,
-body.pdfExporting .proposalBook .quoteMetaBox {
-  display: grid !important;
-  grid-template-rows: repeat(3, minmax(6.5mm, auto)) !important;
-  gap: 1.4mm !important;
-  align-self: center !important;
-  min-height: 0 !important;
-}
-
-.proposalBook .quoteMetaBox div,
-body.pdfExporting .proposalBook .quoteMetaBox div {
-  display: grid !important;
-  grid-template-columns: 25mm minmax(0, 1fr) !important;
-  align-items: center !important;
-  min-height: 6.5mm !important;
+body.pdfExporting .quoteLogoBox img,
+body.pdfExporting .quoteLogoImage {
+  width: auto !important;
   height: auto !important;
-  padding: 1.35mm 2.2mm !important;
-  overflow: visible !important;
+  max-width: 13.5mm !important;
+  max-height: 13.5mm !important;
 }
 
-.proposalBook .quoteMetaBox span,
-body.pdfExporting .proposalBook .quoteMetaBox span {
-  font-size: 6pt !important;
-  line-height: 1.05 !important;
-  white-space: nowrap !important;
-}
-
-.proposalBook .quoteMetaBox strong,
-body.pdfExporting .proposalBook .quoteMetaBox strong {
-  display: block !important;
-  font-size: 6.9pt !important;
-  line-height: 1.15 !important;
-  white-space: nowrap !important;
-  overflow: visible !important;
-}
-
-.proposalBook .quotePartyCard {
-  min-height: 23mm !important;
-  padding: 3mm !important;
-}
-
-.proposalBook .quoteCampaignCard {
-  padding: 3mm !important;
-}
-
-.proposalBook .quoteInfoGrid div {
-  min-height: 11.5mm !important;
-}
-
-.proposalBook .quoteTableCard {
-  flex: 0 0 auto !important;
-  margin-top: 0 !important;
-  padding: 3.2mm !important;
-}
-
-.proposalBook .pageOneTableCard {
-  max-height: 185mm !important;
-  overflow: hidden !important;
-}
-
-.proposalBook .quotationTable {
-  font-size: 6.8pt !important;
-}
-
-.proposalBook .quotationTable th {
-  padding: 1.55mm 1.8mm !important;
-  font-size: 5.9pt !important;
-}
-
-.proposalBook .quotationTable td {
-  padding: 1.55mm 1.8mm !important;
-  line-height: 1.16 !important;
-}
-
-.proposalBook .quotationTable tfoot td {
-  padding: 1.55mm 1.8mm !important;
-}
-
-.proposalBook .quoteParticularName {
-  font-size: 7.15pt !important;
-  line-height: 1.12 !important;
-}
-
-.proposalBook .quoteParticularDescription {
-  font-size: 6.1pt !important;
-  line-height: 1.16 !important;
-}
-
-.proposalBook .quoteGrandBadge {
-  min-width: 34mm !important;
-  padding: 2.2mm 2.8mm !important;
-}
-
-.proposalBook .quoteGrandBadge strong {
-  font-size: 12.4pt !important;
-}
-
-.quotePageNumber {
-  position: relative;
-  z-index: 2;
-  align-self: flex-end;
-  margin-top: auto;
-  color: rgba(15, 23, 42, 0.48);
-  font-size: 6.2pt;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.quotePageTwo .quotePageNumber {
-  margin-top: 1.5mm;
-}
-
-.quoteSummaryPanel,
-.quoteScopePanel {
-  position: relative;
-  z-index: 1;
-  border: 1px solid rgba(15, 23, 42, 0.09);
-  border-radius: 4mm;
-  background:
-    radial-gradient(circle at 0% 0%, rgba(215, 25, 32, 0.075), transparent 34mm),
-    linear-gradient(135deg, #ffffff 0%, #fbfcff 100%);
-  box-shadow: var(--quote-premium-shadow);
-}
-
-.quoteSummaryPanel {
+.quoteBrandText {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: 4mm;
-  padding: 4mm;
+  gap: 1.2mm;
+  min-width: 0;
+  padding-top: 0.6mm;
+    font-weight: 900;
+
 }
 
-.quoteSummaryIntro span,
-.quoteSummaryGrid span,
-.quoteScopeColumn h3 {
-  display: block;
-  margin: 0 0 1mm;
-  color: var(--quote-muted);
-  font-size: 6pt;
-  font-weight: 950;
-  line-height: 1;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.quoteSummaryIntro h2 {
-  margin: 0 0 1.4mm;
-  color: var(--quote-ink);
-  font-size: 14pt;
-  line-height: 1.05;
-  letter-spacing: -0.04em;
-}
-
-.quoteSummaryIntro p {
+.quoteCompanyName {
   margin: 0;
-  color: var(--quote-muted);
-  font-size: 7.2pt;
-  line-height: 1.4;
-  font-weight: 650;
+  font-family: "Aptos Display", "Inter", "Segoe UI", var(--font-stack);
+  font-size: 11.2px;
+  line-height: 1;
+  font-weight: 850;
+  letter-spacing: 0.24em;
+  color: var(--red-600);
+  text-transform: uppercase;
+}
+.quoteEyebrow {
+  margin: 0;
+  font-family: "Aptos", "Inter", "Segoe UI", var(--font-stack);
+  font-size: 10px;
+  line-height: 1.25;
+  font-weight: 900;
+  letter-spacing: 0.27em;
+  color: black;
+  text-transform: uppercase;
+}
+.quoteBrandBlock h1 {
+  margin: 1.2mm 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  color: var(--ink-900);
 }
 
-.quoteSummaryGrid {
+.quoteMetaBox {
+  display: grid;
+  gap: 6px;
+  padding: 4mm 5mm;
+  border-radius: 4mm;
+  background: var(--paper-tint);
+  border: 1px solid var(--ink-100);
+  min-width: 58mm;
+}
+.quoteMetaBox > div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 10px;
+}
+.quoteMetaBox span {
+  color: var(--ink-400);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 8.5px;
+}
+.quoteMetaBox strong {
+  font-weight: 700;
+  color: var(--ink-900);
+  text-align: right;
+  font-size: 10.5px;
+}
+
+/* ---------- Party grid ---------- */
+
+.quotePartyGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.8mm;
+  gap: 6mm;
+}
+.quotePartyCard {
+  padding: 5mm 6mm;
+  border-radius: 4mm;
+  background: var(--paper-warm);
+  border: 1px solid var(--ink-100);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.quotePartyCard p {
+  margin: 0 0 4px;
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--red-600);
+}
+.quotePartyCard h2 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-900);
+  letter-spacing: -0.005em;
+}
+.quotePartyCard span {
+  font-size: 10.5px;
+  color: var(--ink-500);
+  line-height: 1.4;
+}
+.quotePartyCard.right { text-align: right; }
+
+/* ---------- Campaign snapshot ---------- */
+
+.quoteCampaignCard {
+  padding: 5mm 6mm 6mm;
+  border-radius: 4mm;
+  background: #fff;
+  border: 1px solid var(--ink-100);
+}
+.quoteSectionTitle {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px;
+  padding-bottom: 4mm;
+  border-bottom: 1px solid var(--ink-100);
+  margin-bottom: 4mm;
+}
+.quoteSectionTitle span {
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--ink-400);
+}
+.quoteSectionTitle strong {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-900);
+  text-align: right;
 }
 
-.quoteSummaryGrid div {
-  min-height: 15mm;
-  border: 1px solid rgba(15, 23, 42, 0.08);
+.quoteInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4mm 5mm;
+}
+.quoteInfoGrid > div {
+  display: flex; flex-direction: column; gap: 2px;
+  padding-left: 8px;
+  border-left: 2px solid var(--red-500);
+}
+.quoteInfoGrid span {
+  font-size: 8.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-400);
+  font-weight: 600;
+}
+.quoteInfoGrid strong {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+
+/* ---------- Quotation table ---------- */
+
+.quoteTableCard {
+  border-radius: 4mm;
+  border: 1px solid var(--ink-100);
+  background: #fff;
+  overflow: hidden;
+}
+.quoteTableHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 5mm 6mm;
+  background: linear-gradient(180deg, #ffffff, var(--paper-tint));
+  border-bottom: 1px solid var(--ink-100);
+}
+.quoteTableHead > div:first-child span {
+  font-size: 8.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--ink-400);
+  font-weight: 700;
+}
+.quoteTableHead > div:first-child p {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--ink-500);
+  line-height: 1.4;
+}
+
+.quoteGrandBadge {
+  display: flex; flex-direction: column; align-items: flex-end;
+  padding: 4mm 5mm;
   border-radius: 3mm;
-  background: rgba(255, 255, 255, 0.94);
-  padding: 2.2mm;
+  background: var(--ink-900);
+  color: #fff;
+  min-width: 50mm;
+}
+.quoteGrandBadge span {
+  font-size: 8.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 700;
+  opacity: .85;
+}
+.quoteGrandBadge strong {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-top: 2px;
 }
 
-.quoteSummaryGrid strong {
-  display: block;
-  color: var(--quote-ink);
-  font-size: 10.8pt;
-  line-height: 1.1;
-  font-weight: 950;
+.quoteGrandBadge strong,
+.quotationTable tbody td:last-child,
+.quotationTable tfoot td:last-child {
   white-space: nowrap;
 }
 
-.quoteSummaryGrid .quoteSummaryGrand {
-  border-color: rgba(215, 25, 32, 0.24);
-  background: linear-gradient(135deg, var(--quote-red), var(--quote-red-dark));
+.quotationTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10.5px;
 }
-
-.quoteSummaryGrid .quoteSummaryGrand span,
-.quoteSummaryGrid .quoteSummaryGrand strong {
-  color: #ffffff;
-}
-
-.quoteScopePanel {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4mm;
-  padding: 4mm;
-}
-
-.quoteScopeColumn ul {
-  margin: 0;
-  padding-left: 4.2mm;
-  color: #27364a;
-  font-size: 7.2pt;
+.quotationTable thead th {
+  text-align: left;
+  padding: 9px 10px;
+  font-size: 8.5px;
   font-weight: 700;
-  line-height: 1.45;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--ink-500);
+  background: var(--paper-tint);
+  border-bottom: 1px solid var(--ink-100);
+}
+.quotationTable thead th:last-child,
+.quotationTable tbody td:last-child,
+.quotationTable tfoot td:last-child { text-align: right; }
+
+.quotationTable tbody td {
+  padding: 10px 10px;
+  border-bottom: 1px solid var(--ink-100);
+  vertical-align: top;
+  color: var(--ink-700);
+}
+.quoteParticularBlock { display: flex; flex-direction: column; gap: 2px; }
+.quoteParticularName {
+  font-weight: 700;
+  color: var(--ink-900);
+  font-size: 11px;
+}
+.quoteParticularDescription {
+  margin: 0;
+  font-size: 9.5px;
+  color: var(--ink-400);
+  line-height: 1.4;
 }
 
-.quoteScopeColumn li + li {
-  margin-top: 1mm;
+
+.quoteDiscountPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
 }
 
-.proposalBook .quoteTermsPanel,
-body.pdfExporting .proposalBook .quoteTermsPanel {
-  flex: 0 0 auto !important;
-  margin-top: 0 !important;
-  padding: 3.2mm 3.4mm 3.5mm 3.7mm !important;
-  border-radius: 4mm !important;
-}
-
-.proposalBook .quoteTermsHeader,
-body.pdfExporting .proposalBook .quoteTermsHeader {
-  margin-bottom: 2mm !important;
-}
-
-.proposalBook .quoteTermsTimeline,
-body.pdfExporting .proposalBook .quoteTermsTimeline {
-  gap: 1mm !important;
-}
-
-.proposalBook .quoteTermsTimeline li,
-body.pdfExporting .proposalBook .quoteTermsTimeline li {
-  min-height: 7.2mm !important;
-  padding: 1mm 1.7mm !important;
-}
-
-.proposalBook .quoteTermsTimeline p,
-body.pdfExporting .proposalBook .quoteTermsTimeline p {
-  font-size: 6.2pt !important;
-  line-height: 1.18 !important;
-}
-
-.proposalBook .quotePremiumFooter,
-.proposalBook .quoteFooter.quotePremiumFooter,
-body.pdfExporting .proposalBook .quotePremiumFooter,
-body.pdfExporting .proposalBook .quoteFooter.quotePremiumFooter {
-  width: 100% !important;
-  flex: 0 0 auto !important;
-  align-self: stretch !important;
-  margin-top: auto !important;
-  border-radius: 4mm !important;
-  padding: 3.2mm 3.5mm !important;
-}
-
-.proposalBook .quotePremiumFooter.noSignature,
-body.pdfExporting .proposalBook .quotePremiumFooter.noSignature {
-  grid-template-columns: 1fr !important;
-  min-height: 23mm !important;
-}
-
-.proposalBook .quotePremiumFooter.hasSignature,
-body.pdfExporting .proposalBook .quotePremiumFooter.hasSignature {
-  grid-template-columns: 1fr 58mm !important;
-  min-height: 28mm !important;
-}
-
-.proposalBook .quoteSignatureImageFrame,
-body.pdfExporting .proposalBook .quoteSignatureImageFrame {
-  width: 39mm !important;
-  height: 14mm !important;
-}
-
-body.pdfExporting .proposalBook {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 0 !important;
-  width: 210mm !important;
-  background: #ffffff !important;
-}
-
-body.pdfExporting .proposalBook .proposalDocument {
-  border-radius: 0 !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  transform: none !important;
-}
-
-@media print {
-  html,
-  body {
-    width: 210mm !important;
-    height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
-  }
-
-  .qoPage,
-  .qoMain,
-  .qoPreviewColumn {
-    display: block !important;
-    width: 210mm !important;
-    height: auto !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-    background: #ffffff !important;
-  }
-
-  .proposalBook {
-    display: block !important;
-    width: 210mm !important;
-    gap: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .proposalBook .proposalDocument,
-  .proposalBook .proposalDocument.pdfPage {
-    width: 210mm !important;
-    height: 297mm !important;
-    min-height: 297mm !important;
-    max-height: 297mm !important;
-    margin: 0 !important;
-    padding: 8mm !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    page-break-after: always !important;
-    break-after: page !important;
-    page-break-inside: avoid !important;
-    overflow: hidden !important;
-  }
-
-  .proposalBook .proposalDocument:last-child {
-    page-break-after: auto !important;
-    break-after: auto !important;
-  }
-
-  .proposalBook .quoteTopBar,
-  .proposalBook .quoteTopBarSmall,
-  .proposalBook .quoteSummaryPanel,
-  .proposalBook .quoteScopePanel,
-  .proposalBook .quoteTermsPanel,
-  .proposalBook .quotePremiumFooter {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-  }
-
-  .proposalBook .quoteLogoBox img {
-    width: auto !important;
-    height: auto !important;
-    max-width: 13.2mm !important;
-    max-height: 13.2mm !important;
-    object-fit: contain !important;
-  }
-}
-
-.quotationListLink {
+.quoteDiscountPills span {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-height: 40px;
-  padding: 0 16px;
-  border-radius: 10px;
-  background: #ffffff;
-  color: #111827;
-  border: 1px solid rgba(15, 23, 42, 0.14);
-  text-decoration: none;
-  font-size: 14px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: var(--paper-tint);
+  border: 1px solid var(--ink-100);
+  font-size: 7.8px;
   font-weight: 700;
-  cursor: pointer;
+  color: var(--ink-500);
+  white-space: nowrap;
 }
 
-.quotationListLink:hover {
-  background: #f3f4f6;
+.quoteRateBreakdown,
+.quoteAmountBreakdown {
+  display: grid;
+  gap: 4px;
+  min-width: 24mm;
+}
+
+.quoteRateBreakdown span,
+.quoteAmountBreakdown span {
+  display: grid;
+  gap: 1px;
+}
+
+.quoteRateBreakdown em,
+.quoteAmountBreakdown em {
+  font-style: normal;
+  font-size: 7.5px;
+  line-height: 1;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-400);
+}
+
+.quoteRateBreakdown strong,
+.quoteAmountBreakdown strong {
+  font-size: 9px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: var(--ink-900);
+  white-space: nowrap;
+}
+
+.quoteRateBreakdown .discountLine strong,
+.quoteAmountBreakdown .discountLine strong,
+.quotationDiscountRow td:last-child {
+  color: var(--red-600);
+}
+
+.quoteRateBreakdown .finalLine strong,
+.quoteAmountBreakdown .finalLine strong {
+  color: var(--ink-900);
+}
+
+.quotationActualRow td {
+  color: var(--ink-500);
+  background: var(--paper-tint);
+}
+
+.quotationDiscountRow td {
+  color: var(--red-700);
+  background: var(--red-050);
+}
+
+.quotationTable tfoot td {
+  padding: 9px 10px;
+  font-weight: 700;
+  color: var(--ink-700);
+  background: #fff;
+  border-top: 1px solid var(--ink-100);
+}
+.quotationGrandRow td {
+  background: var(--ink-900) !important;
+  color: #fff !important;
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+}
+
+/* Dense layout when many line items */
+.denseQuoteBook .quotationTable tbody td { padding: 7px 10px; }
+.denseQuoteBook .proposalDocument.pdfPage { gap: 7mm; padding-top: 14mm; padding-bottom: 14mm; }
+
+/* ---------- Page 2 ---------- */
+
+.quoteTermsPanel {
+  border: 1px solid var(--ink-100);
+  border-radius: 4mm;
+  overflow: hidden;
+  background: #fff;
+}
+.quoteTermsHeader {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5mm 6mm;
+  background: linear-gradient(180deg, #fff, var(--paper-tint));
+  border-bottom: 1px solid var(--ink-100);
+}
+.quoteTermsHeader span {
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--red-600);
+}
+.quoteTermsHeader h3 {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-900);
+  letter-spacing: -0.005em;
+}
+.quoteTermsHeader strong {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--red-050);
+  color: var(--red-700);
+  border: 1px solid var(--red-100);
+}
+
+.quoteTermsBody { padding: 5mm 6mm 6mm; }
+.quoteTermsTimeline {
+  list-style: none;
+  margin: 0; padding: 0;
+  display: grid; gap: 10px;
+}
+.quoteTermsTimeline li {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--paper-warm);
+  border: 1px solid var(--ink-100);
+  border-radius: 10px;
+}
+.quoteTermNumber {
+  display: grid; place-items: center;
+  width: 24px; height: 24px;
+  border-radius: 8px;
+  background: var(--ink-900);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+/* Legacy dot fallback */
+.quoteTermDot {
+  width: 8px; height: 8px; border-radius: 999px;
+  background: var(--red-500);
+  margin-top: 6px;
+}
+.quoteTermsTimeline li p {
+  margin: 0;
+  font-size: 10.5px;
+  color: var(--ink-700);
+  line-height: 1.5;
+}
+
+.quoteInfoTwoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6mm;
+}
+.quoteInfoPanel {
+  background: #fff;
+  border: 1px solid var(--ink-100);
+  border-radius: 4mm;
+  padding: 5mm 6mm;
+}
+.quoteInfoEyebrow {
+  display: block;
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--red-600);
+  margin-bottom: 6px;
+}
+.quoteInfoPanel ul,
+.quoteInfoPanel ol {
+  margin: 0; padding-left: 18px;
+  display: grid; gap: 6px;
+  color: var(--ink-700);
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+/* ---------- Footer ---------- */
+
+.quoteFooter.quotePremiumFooter {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 6mm;
+  padding-top: 6mm;
+  border-top: 1px solid var(--ink-100);
+}
+.quoteFooterNote {
+  display: flex; flex-direction: column; gap: 3px;
+  max-width: 95mm;
+}
+.quoteFooterNote span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+.quoteFooterNote strong {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--ink-400);
+  letter-spacing: 0.02em;
+}
+
+.quoteSignature {
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 2px;
+  text-align: right;
+}
+.quoteSignatureImageFrame {
+  border-bottom: 1px solid var(--ink-300);
+  padding-bottom: 4px;
+  margin-bottom: 4px;
+  min-width: 50mm;
+  display: flex; justify-content: flex-end;
+}
+.quoteSignatureImage {
+  max-height: 16mm;
+  max-width: 60mm;
+  object-fit: contain;
+}
+.quoteSignature span {
+  font-size: 9.5px;
+  color: var(--ink-500);
+}
+.quoteSignature strong {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink-900);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.quotePageNumber {
+  position: absolute;
+  bottom: 8mm;
+  left: 0; right: 0;
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--ink-300);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* ========================== PRINT ========================== */
+
+@media print {
+  body { background: #fff; }
+  .noPrint { display: none !important; }
+  .qoMain { display: block; padding: 0; }
+  .qoPreviewColumn { position: static; }
+  .proposalBook { gap: 0; }
+  .proposalDocument.pdfPage {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    width: 210mm;
+    min-height: 297mm;
+    page-break-after: always;
+    transform: none !important;
+    margin: 0 !important;
+  }
+  .proposalDocument.pdfPage:last-child { page-break-after: auto; }
 }

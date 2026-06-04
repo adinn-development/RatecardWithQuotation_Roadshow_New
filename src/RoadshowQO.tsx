@@ -10,7 +10,7 @@ const LOGO_SRC = "/adinn-logo.png";
 const VEHICLES_JSON_URL =
   "https://adinn-space.sgp1.cdn.digitaloceanspaces.com/roadshowRateCard/vehicles.json";
 
-const USE_LOCAL_API = false;   // set true for local, false for live
+const USE_LOCAL_API = false; // set true for local, false for live
 const API_BASE_URL = USE_LOCAL_API
   ? "http://localhost:3001"
   : "https://roadshow-backend.onrender.com";
@@ -20,9 +20,8 @@ const ROADSHOW_QUOTATION_API_URL = `${API_BASE_URL}/api/roadshow-quotations`;
 const CATEGORY_ORDER = ["Flex Branding", "Hybrid LED + Flex", "LED Vehicles"];
 
 const LED_TV_ADDON_RATE_PER_DAY = 350;
-const LED_55_TV_ADDON_RATE_PER_DAY = 500;
-const POWER_BACKUP_ADDON_RATE_PER_DAY = 600;
-const RTO_PERMISSION_VALIDITY_DAYS = 28;
+const POWER_BACKUP_ADDON_RATE_PER_DAY = 650;
+const RTO_PERMISSION_VALIDITY_DAYS = 31;
 
 const COMPANY_DETAILS = {
   name: "ADINN",
@@ -31,7 +30,7 @@ const COMPANY_DETAILS = {
 };
 
 const DEFAULT_PREPARED_BY_ADDRESS =
-  "29,2A, Ground Floor, 1st Cross Street, Bypass Rd, Vanamamalai Nagar, Kalavasal, Madurai, Tamil Nadu 625010";
+  "29,2A, 1st Cross Street, Bypass Rd, Vanamamalai Nagar, Kalavasal, Madurai, Tamil Nadu 625010";
 
 const PREPARED_BY_DEFAULTS = {
   companyName: "Adinn Advertisment services Ltd",
@@ -42,11 +41,13 @@ const PREPARED_BY_DEFAULTS = {
 };
 
 const TERMS_AND_CONDITIONS = [
-  "Extra KM, toll, parking and local permission charges will be billed additionally wherever applicable.",
-  "Vehicle availability is subject to confirmation at the time of booking.",
-  "50% advance payment is required to confirm the campaign booking.",
-  "Taxes are applicable as per government norms.",
-  "Add-on charges apply only when selected in this quotation.",
+  "PO Should be given in the name of \"ADINN ADVERTISING SERVICES LTD\".",
+  "GST at 18% will be applicable on the above-mentioned rates.",
+  "2 Working days time required for Branding & Reporting from the date of Design Confirmation.",
+  "Working Hours - 8 Hours, Additional Hours Charges will be Applicable.",
+  "Other charges Extra If any (such as Promoter, Leaflets, Power Backup, TV etc..).",
+  "Audio should be played in Rural areas only, not able to play in cities.",
+  "Video file should be given in MP4 format.",
 ];
 
 type QuickSpec = {
@@ -54,12 +55,19 @@ type QuickSpec = {
   value: string;
 };
 
+type VehicleVariant = {
+  id: number | string;
+  label: string;
+  kmPerDay: number;
+  pricePerDay: number;
+  leastSellingPricingPerDay?: number;
+  quickSpecs?: QuickSpec[];
+  included?: string[];
+};
+
 type LocationCharge = {
   label: string;
-  chennai: string;
-  rotn: string;
-  kerala: string;
-  otherStates: string;
+  [key: string]: string | number | undefined;
 };
 
 type Vehicle = {
@@ -69,6 +77,7 @@ type Vehicle = {
   type: string;
   shortDescription: string;
   pricePerDay: number;
+  leastSellingPricingPerDay?: number;
   highlight: string;
   quickSpecs: QuickSpec[];
   included: string[];
@@ -78,6 +87,8 @@ type Vehicle = {
   image?: string;
   locationCharges?: LocationCharge[];
   packageTotal?: string;
+  hide?: boolean | string;
+  variants?: VehicleVariant[];
 };
 
 type ClientDetails = {
@@ -108,7 +119,14 @@ type PricingDetails = {
   upDownCharge: number;
 };
 
-type RegionKey = "chennai" | "rotn" | "kerala" | "otherStates";
+type RegionKey =
+  | "chennai"
+  | "rotn"
+  | "kerala"
+  | "andhara"
+  | "telungana"
+  | "karnataka"
+  | "otherStates";
 
 type QuoteLineItem = {
   label: string;
@@ -118,6 +136,11 @@ type QuoteLineItem = {
   quantityLabel: string;
   formulaLabel: string;
   amount: number;
+  actualRate?: number;
+  finalRate?: number;
+  discountRate?: number;
+  actualAmount?: number;
+  discountAmount?: number;
 };
 
 type Html2CanvasFn = (
@@ -213,13 +236,36 @@ const loadImageElement = (src: string) => {
     const image = new Image();
 
     image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("Unable to load the selected image."));
+    image.onerror = () =>
+      reject(new Error("Unable to load the selected image."));
     image.src = src;
   });
 };
 
 const canvasToPngDataUrl = (canvas: HTMLCanvasElement) => {
   return canvas.toDataURL("image/png");
+};
+
+const imageSourceToDataUrl = async (src: string) => {
+  if (!src || src.startsWith("data:")) return src;
+
+  const response = await fetch(src, { cache: "no-store" });
+
+  if (!response.ok) {
+    throw new Error("Unable to prepare logo for PDF.");
+  }
+
+  const blob = await response.blob();
+
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onloadend = () => resolve(String(reader.result || ""));
+    reader.onerror = () =>
+      reject(new Error("Unable to prepare logo for PDF."));
+
+    reader.readAsDataURL(blob);
+  });
 };
 
 const normalizeImageFileToDataUrl = async (file: File) => {
@@ -245,7 +291,10 @@ const normalizeImageFileToDataUrl = async (file: File) => {
       return canvasToPngDataUrl(canvas);
     }
   } catch (error) {
-    console.warn("Image orientation normalization failed; using fallback.", error);
+    console.warn(
+      "Image orientation normalization failed; using fallback.",
+      error,
+    );
   }
 
   const dataUrl = await readFileAsDataUrl(file);
@@ -276,6 +325,259 @@ const isVehicleArray = (value: unknown): value is Vehicle[] => {
   return Array.isArray(value);
 };
 
+const isVehicleHidden = (vehicle: Vehicle) => {
+  if (vehicle.hide === true) return true;
+
+  if (typeof vehicle.hide === "string") {
+    return vehicle.hide.trim().toLowerCase() === "true";
+  }
+
+  return false;
+};
+
+const isValidVehicleRecord = (vehicle: Vehicle | undefined) => {
+  return Boolean(
+    vehicle &&
+    vehicle.id !== undefined &&
+    vehicle.id !== null &&
+    typeof vehicle.name === "string" &&
+    vehicle.name.trim() &&
+    typeof vehicle.category === "string" &&
+    vehicle.category.trim(),
+  );
+};
+
+const getVisibleVehicles = (vehicleList: Vehicle[]) => {
+  return vehicleList.filter(
+    (vehicle) => isValidVehicleRecord(vehicle) && !isVehicleHidden(vehicle),
+  );
+};
+
+const getVehicleVariants = (vehicle: Vehicle | undefined) => {
+  if (!vehicle?.variants?.length) return [];
+
+  return vehicle.variants.filter(
+    (variant) =>
+      variant &&
+      variant.id !== undefined &&
+      variant.id !== null &&
+      Number.isFinite(Number(variant.pricePerDay)),
+  );
+};
+
+const hasVehicleVariants = (vehicle: Vehicle | undefined) => {
+  return getVehicleVariants(vehicle).length > 0;
+};
+
+const getDefaultVariantId = (vehicle: Vehicle | undefined) => {
+  const firstVariant = getVehicleVariants(vehicle)[0];
+  return firstVariant ? String(firstVariant.id) : "";
+};
+
+const getSelectedVariant = (
+  vehicle: Vehicle | undefined,
+  selectedVariantId: string,
+) => {
+  const variants = getVehicleVariants(vehicle);
+
+  if (!variants.length) return undefined;
+
+  return (
+    variants.find((variant) => String(variant.id) === selectedVariantId) ||
+    variants[0]
+  );
+};
+
+const extractFirstNumber = (value?: string | number) => {
+  if (typeof value === "number") return value;
+
+  if (!value) return 0;
+
+  const match = String(value).match(/\d+(?:\.\d+)?/);
+
+  if (!match) return 0;
+
+  const parsed = Number(match[0]);
+
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getVariantQuickSpecs = (
+  vehicle: Vehicle | undefined,
+  variant?: VehicleVariant,
+) => {
+  if (variant?.quickSpecs?.length) {
+    return variant.quickSpecs;
+  }
+
+  return vehicle?.quickSpecs?.length ? vehicle.quickSpecs : [];
+};
+
+const findQuickSpec = (
+  quickSpecs: QuickSpec[],
+  matcher: (label: string, value: string) => boolean,
+) => {
+  return quickSpecs.find((spec) => {
+    const label = String(spec.label || "")
+      .trim()
+      .toLowerCase();
+    const value = String(spec.value || "")
+      .trim()
+      .toLowerCase();
+
+    return matcher(label, value);
+  });
+};
+
+const getPackageDetails = (
+  vehicle: Vehicle | undefined,
+  variant?: VehicleVariant,
+) => {
+  const quickSpecs = getVariantQuickSpecs(vehicle, variant);
+
+  const kmSpec = findQuickSpec(
+    quickSpecs,
+    (label) =>
+      label === "km" || (label.includes("km") && !label.includes("extra")),
+  );
+  const extraKmSpec = findQuickSpec(
+    quickSpecs,
+    (label) => label.includes("extra") && label.includes("km"),
+  );
+  const minimumSpec = findQuickSpec(
+    quickSpecs,
+    (label, value) => label.includes("minimum") || value.includes("minimum"),
+  );
+  const extraHourSpec = findQuickSpec(
+    quickSpecs,
+    (label) => label.includes("extra") && label.includes("hour"),
+  );
+
+  const kmLimit =
+    variant?.kmPerDay ||
+    extractFirstNumber(kmSpec?.value) ||
+    extractFirstNumber(
+      vehicle?.quickSpecs?.find((spec) =>
+        String(spec.label || "")
+          .toLowerCase()
+          .includes("km"),
+      )?.value,
+    ) ||
+    60;
+
+  const minimumDays = extractFirstNumber(minimumSpec?.value) || 10;
+
+  return {
+    kmLimit,
+    dailyKmLabel: `${kmLimit} km/day`,
+    extraKm: extraKmSpec?.value || "",
+    minimumDays,
+    minimumDaysLabel: `${minimumDays} days`,
+    extraHour: extraHourSpec?.value || "",
+    quickSpecs,
+  };
+};
+
+const getKmLimitFromQuickSpecs = (vehicle: Vehicle | undefined) => {
+  return getPackageDetails(vehicle).kmLimit;
+};
+
+const getVehicleDisplayRate = (vehicle: Vehicle) => {
+  const variants = getVehicleVariants(vehicle);
+
+  if (!variants.length) return vehicle.pricePerDay || 0;
+
+  return Math.min(...variants.map((variant) => variant.pricePerDay));
+};
+
+const getVehicleCardSubtitle = (vehicle: Vehicle) => {
+  const variants = getVehicleVariants(vehicle);
+
+  if (variants.length) {
+    const kmLabels = variants.map((variant) => variant.label).join(", ");
+
+    return `Packages from ${formatPrice(
+      getVehicleDisplayRate(vehicle),
+    )} /day · ${kmLabels}`;
+  }
+
+  const packageDetails = getPackageDetails(vehicle);
+
+  return `${formatPrice(vehicle.pricePerDay || 0)} /day · ${
+    packageDetails.kmLimit
+  } km/day · Min ${packageDetails.minimumDays}d`;
+};
+
+const getVehicleRate = (
+  vehicle: Vehicle | undefined,
+  variant?: VehicleVariant,
+) => {
+  return variant?.pricePerDay || vehicle?.pricePerDay || 0;
+};
+
+const getVehicleLeastSellingRate = (
+  vehicle: Vehicle | undefined,
+  variant?: VehicleVariant,
+) => {
+  const baseRate = getVehicleRate(vehicle, variant);
+  const rawLeastSellingRate =
+    variant?.leastSellingPricingPerDay ??
+    vehicle?.leastSellingPricingPerDay ??
+    baseRate;
+
+  const leastSellingRate = Number(rawLeastSellingRate);
+
+  if (!Number.isFinite(leastSellingRate) || leastSellingRate <= 0) {
+    return baseRate;
+  }
+
+  if (baseRate > 0 && leastSellingRate > baseRate) {
+    return baseRate;
+  }
+
+  return leastSellingRate;
+};
+
+const getAllowedVehicleRateRange = (
+  vehicle: Vehicle | undefined,
+  variant?: VehicleVariant,
+) => {
+  const baseRate = getVehicleRate(vehicle, variant);
+  const leastSellingRate = getVehicleLeastSellingRate(vehicle, variant);
+
+  return {
+    minRate: leastSellingRate,
+    maxRate: baseRate,
+  };
+};
+
+const buildVehicleDetailRows = (
+  vehicle: Vehicle | undefined,
+  packageDetails: ReturnType<typeof getPackageDetails>,
+  vehicleRate: number,
+) => {
+  if (!vehicle) return [];
+
+  return [
+    {
+      label: "Per Day Vehicle Rent",
+      value: `${formatPrice(vehicleRate)} / per day`,
+    },
+    {
+      label: "Daily KM Limit",
+      value: `${packageDetails.kmLimit} km/day`,
+    },
+    {
+      label: "Extra KM",
+      value: packageDetails.extraKm || "-",
+    },
+    {
+      label: "Extra Hour",
+      value: packageDetails.extraHour || "-",
+    },
+  ];
+};
+
 const parseMoney = (value?: string | number) => {
   if (typeof value === "number") return value;
   if (!value) return 0;
@@ -287,7 +589,7 @@ const parseMoney = (value?: string | number) => {
 };
 
 const formatPrice = (amount: number) => {
-  return `₹ ${Math.round(amount).toLocaleString("en-IN")}`;
+  return `₹\u00A0${Math.round(amount).toLocaleString("en-IN")}`;
 };
 
 const formatDate = (date: Date) => {
@@ -304,8 +606,20 @@ const addDays = (date: Date, days: number) => {
   return nextDate;
 };
 
+const sanitizeNumberText = (value: string) => {
+  return String(value || "").replace(/\D/g, "");
+};
+
+const parseNumberText = (value: string, fallbackValue = 0) => {
+  const digitsOnly = sanitizeNumberText(value);
+  if (!digitsOnly) return fallbackValue;
+
+  const parsed = Number(digitsOnly);
+  return Number.isFinite(parsed) ? parsed : fallbackValue;
+};
+
 const clampNumber = (value: string, minValue: number) => {
-  const parsed = Number(value);
+  const parsed = parseNumberText(value, minValue);
   if (!Number.isFinite(parsed)) return minValue;
   return Math.max(minValue, parsed);
 };
@@ -315,10 +629,13 @@ const getRegionLabel = (region: RegionKey) => {
     chennai: "Chennai",
     rotn: "ROTN",
     kerala: "Kerala",
+    andhara: "Andhra",
+    telungana: "Telangana",
+    karnataka: "Karnataka",
     otherStates: "Other States",
   };
 
-  return labels[region];
+  return labels[region] || region;
 };
 
 const getRtoBillingMonths = (campaignDays: number) => {
@@ -344,6 +661,143 @@ const waitForImagesToLoad = async (selector: string) => {
   );
 };
 
+const normalizeChargeKey = (value: string) =>
+  value.replace(/[^a-z0-9]/gi, "").toLowerCase();
+
+const getRegionChargeFallbackKeys = (region: RegionKey, chargeLabel = "") => {
+  const normalizedLabel = chargeLabel.toLowerCase();
+
+  const baseKeys: Record<RegionKey, string[]> = {
+    chennai: ["chennai", "Chennai"],
+    rotn: [
+      "rotn",
+      "ROTN",
+      "rot",
+      "restOfTamilNadu",
+      "restoftamilnadu",
+      "restOfTN",
+    ],
+    kerala: ["kerala", "Kerala"],
+    andhara: [
+      "andhara",
+      "andhra",
+      "Andhara",
+      "Andhra",
+      "andharaPradesh",
+      "andhraPradesh",
+      "ap",
+      "AP",
+    ],
+    telungana: [
+      "telungana",
+      "telangana",
+      "Telungana",
+      "Telangana",
+      "telengana",
+      "ts",
+      "TS",
+    ],
+    karnataka: ["karnataka", "Karnataka", "ka", "KA"],
+    otherStates: [
+      "otherStates",
+      "otherstates",
+      "otherState",
+      "otherstate",
+      "Other State",
+      "other state",
+      "others",
+      "other",
+    ],
+  };
+
+  const fallbackKeys = [...(baseKeys[region] || [])];
+
+  if (normalizedLabel.includes("promoter")) {
+    if (region === "chennai" || region === "rotn") {
+      fallbackKeys.push(
+        "Tamilnadu",
+        "TamilNadu",
+        "Tamil Nadu",
+        "tamilnadu",
+        "tamilNadu",
+        "tn",
+        "TN",
+      );
+    } else if (region === "kerala") {
+      fallbackKeys.push("Kerala", "kerala");
+    } else {
+      fallbackKeys.push(
+        "otherStates",
+        "Other State",
+        "other state",
+        "otherstates",
+        "others",
+        "other",
+      );
+    }
+  }
+
+  if (normalizedLabel.includes("branding")) {
+    if (region !== "kerala") {
+      fallbackKeys.push(
+        "general",
+        "General",
+        "Tamilnadu",
+        "TamilNadu",
+        "tamilnadu",
+        "tamilNadu",
+      );
+    } else {
+      fallbackKeys.push("general", "General");
+    }
+  }
+
+  if (region === "otherStates") {
+    fallbackKeys.push(
+      "otherStates",
+      "Other State",
+      "other state",
+      "otherstates",
+      "others",
+      "other",
+    );
+  }
+
+  return Array.from(new Set(fallbackKeys));
+};
+
+const getLocationChargeValue = (row: LocationCharge, region: RegionKey) => {
+  const fallbackKeys = getRegionChargeFallbackKeys(region, row.label);
+
+  for (const key of fallbackKeys) {
+    const exactValue = row[key];
+
+    if (exactValue !== undefined && exactValue !== "") {
+      return exactValue;
+    }
+  }
+
+  const normalizedEntries = Object.entries(row).reduce<
+    Record<string, string | number>
+  >((entries, [key, value]) => {
+    if (key !== "label" && value !== undefined && value !== "") {
+      entries[normalizeChargeKey(key)] = value;
+    }
+
+    return entries;
+  }, {});
+
+  for (const key of fallbackKeys) {
+    const normalizedValue = normalizedEntries[normalizeChargeKey(key)];
+
+    if (normalizedValue !== undefined && normalizedValue !== "") {
+      return normalizedValue;
+    }
+  }
+
+  return "";
+};
+
 const findCharge = (
   vehicle: Vehicle | undefined,
   labelKeywords: string[],
@@ -352,7 +806,7 @@ const findCharge = (
   if (!vehicle?.locationCharges?.length) return 0;
 
   const row = vehicle.locationCharges.find((item) => {
-    const label = item.label.toLowerCase();
+    const label = String(item.label || "").toLowerCase();
 
     return labelKeywords.some((keyword) =>
       label.includes(keyword.toLowerCase()),
@@ -361,20 +815,21 @@ const findCharge = (
 
   if (!row) return 0;
 
-  return parseMoney(row[region]);
+  return parseMoney(getLocationChargeValue(row, region));
 };
 
 const getDefaultPricing = (
   vehicle: Vehicle | undefined,
   region: RegionKey,
+  variant?: VehicleVariant,
 ): PricingDetails => {
   return {
-    vehicleRate: vehicle?.pricePerDay || 0,
+    vehicleRate: variant?.pricePerDay || vehicle?.pricePerDay || 0,
     brandingCost: findCharge(vehicle, ["branding"], region),
     rtoPermission: findCharge(vehicle, ["rto", "permission"], region),
     promoterCost: findCharge(vehicle, ["promoter"], region),
     ledCost: LED_TV_ADDON_RATE_PER_DAY,
-    led55Cost: LED_55_TV_ADDON_RATE_PER_DAY,
+    led55Cost: 0,
     powerBackup: POWER_BACKUP_ADDON_RATE_PER_DAY,
     upDownCharge: 0,
   };
@@ -409,7 +864,9 @@ const waitForNextPaint = async () => {
 
 const loadExternalScript = (src: string, id: string) => {
   return new Promise<void>((resolve, reject) => {
-    const existingScript = document.getElementById(id) as HTMLScriptElement | null;
+    const existingScript = document.getElementById(
+      id,
+    ) as HTMLScriptElement | null;
 
     if (existingScript?.dataset.loaded === "true") {
       resolve();
@@ -476,7 +933,10 @@ const sanitizeFileNamePart = (value: string) => {
   return cleaned || "roadshow-quotation";
 };
 
-const getQuotationPdfFileName = (proposalNumber: string, companyName: string) => {
+const getQuotationPdfFileName = (
+  proposalNumber: string,
+  companyName: string,
+) => {
   const companyPart = sanitizeFileNamePart(companyName || "quotation");
   const proposalPart = sanitizeFileNamePart(proposalNumber);
 
@@ -568,6 +1028,8 @@ export default function RoadshowQO() {
 
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
+  const [selectedVehicleVariantId, setSelectedVehicleVariantId] =
+    useState<string>("");
   const [region, setRegion] = useState<RegionKey>("chennai");
 
   const [clientDetails, setClientDetails] = useState<ClientDetails>({
@@ -583,8 +1045,11 @@ export default function RoadshowQO() {
     useState<PreparedByDetails>(PREPARED_BY_DEFAULTS);
 
   const [quantity, setQuantity] = useState(1);
+  const [quantityInput, setQuantityInput] = useState("1");
   const [promoterQuantity, setPromoterQuantity] = useState(1);
+  const [promoterQuantityInput, setPromoterQuantityInput] = useState("1");
   const [days, setDays] = useState(10);
+  const [daysInput, setDaysInput] = useState("10");
   const [kmLimit, setKmLimit] = useState(60);
   const [minimumDays, setMinimumDays] = useState(10);
   const [gstPercent, setGstPercent] = useState(18);
@@ -600,12 +1065,18 @@ export default function RoadshowQO() {
     upDownCharge: 0,
   });
 
+  const [leastSellingPriceInput, setLeastSellingPriceInput] = useState("");
+  const [leastSellingPriceError, setLeastSellingPriceError] = useState("");
+  const [quantityError, setQuantityError] = useState("");
+  const [campaignDaysError, setCampaignDaysError] = useState("");
+  const [addOnMessage, setAddOnMessage] = useState("");
+
   const [includePromoter, setIncludePromoter] = useState(false);
   const [includeLed, setIncludeLed] = useState(false);
-  const [includeLed55, setIncludeLed55] = useState(false);
   const [includePowerBackup, setIncludePowerBackup] = useState(false);
 
   const [uploadedLogo, setUploadedLogo] = useState("");
+  const [pdfLogoSrc, setPdfLogoSrc] = useState("");
   const [signatureSource, setSignatureSource] = useState("");
   const [uploadedSignature, setUploadedSignature] = useState("");
   const [signatureCrop, setSignatureCrop] = useState<CropSelection>(
@@ -639,6 +1110,7 @@ export default function RoadshowQO() {
   );
 
   const displayLogo = uploadedLogo || LOGO_SRC;
+  const renderLogoSrc = pdfLogoSrc || displayLogo;
 
   const fetchNextQuotationNumber = async () => {
     try {
@@ -678,13 +1150,20 @@ export default function RoadshowQO() {
           throw new Error("Cloud vehicles.json is not a valid vehicle array.");
         }
 
-        setVehicles(cloudVehicles);
+        const visibleVehicles = getVisibleVehicles(cloudVehicles);
 
-        const firstVehicle = cloudVehicles[0];
+        setVehicles(visibleVehicles);
+
+        const firstVehicle = visibleVehicles[0];
 
         if (firstVehicle) {
           setSelectedCategory(normalizeCategory(firstVehicle.category));
           setSelectedVehicleId(String(firstVehicle.id));
+          setSelectedVehicleVariantId(getDefaultVariantId(firstVehicle));
+        } else {
+          setSelectedCategory("");
+          setSelectedVehicleId("");
+          setSelectedVehicleVariantId("");
         }
       } catch (error) {
         setVehiclesError(
@@ -700,7 +1179,9 @@ export default function RoadshowQO() {
 
   const categories = useMemo(() => {
     const normalized = new Set<string>(
-      vehicles.map((vehicle) => normalizeCategory(vehicle.category)),
+      getVisibleVehicles(vehicles).map((vehicle) =>
+        normalizeCategory(vehicle.category),
+      ),
     );
 
     const ordered = CATEGORY_ORDER.filter((category) =>
@@ -715,20 +1196,60 @@ export default function RoadshowQO() {
   }, [vehicles]);
 
   const categoryVehicles = useMemo(() => {
-    return vehicles.filter(
+    return getVisibleVehicles(vehicles).filter(
       (vehicle) => normalizeCategory(vehicle.category) === selectedCategory,
     );
   }, [vehicles, selectedCategory]);
 
   const selectedVehicle = useMemo(() => {
-    return vehicles.find((vehicle) => String(vehicle.id) === selectedVehicleId);
+    return getVisibleVehicles(vehicles).find(
+      (vehicle) => String(vehicle.id) === selectedVehicleId,
+    );
   }, [vehicles, selectedVehicleId]);
+
+  const selectedVehicleVariants = useMemo(() => {
+    return getVehicleVariants(selectedVehicle);
+  }, [selectedVehicle]);
+
+  const selectedVehicleVariant = useMemo(() => {
+    return getSelectedVariant(selectedVehicle, selectedVehicleVariantId);
+  }, [selectedVehicle, selectedVehicleVariantId]);
+
+  const selectedPackageDetails = useMemo(() => {
+    return getPackageDetails(selectedVehicle, selectedVehicleVariant);
+  }, [selectedVehicle, selectedVehicleVariant]);
+
+  const selectedVehicleRate = useMemo(() => {
+    return getVehicleRate(selectedVehicle, selectedVehicleVariant);
+  }, [selectedVehicle, selectedVehicleVariant]);
+
+  const selectedVehicleRateRange = useMemo(() => {
+    return getAllowedVehicleRateRange(selectedVehicle, selectedVehicleVariant);
+  }, [selectedVehicle, selectedVehicleVariant]);
+
+  const selectedVehicleLeastSellingRate = selectedVehicleRateRange.minRate;
+  const selectedVehicleMaxRate = selectedVehicleRateRange.maxRate;
+
+  const selectedVehicleDetailRows = useMemo(() => {
+    return buildVehicleDetailRows(
+      selectedVehicle,
+      selectedPackageDetails,
+      selectedVehicleRate,
+    );
+  }, [selectedVehicle, selectedPackageDetails, selectedVehicleRate]);
+
+  const selectedVehicleDisplayName = selectedVehicleVariant
+    ? `${selectedVehicle?.name || "Selected Vehicle"} - ${selectedVehicleVariant.label}`
+    : selectedVehicle?.name || "Selected Vehicle";
 
   const draftProposalNumber = useMemo(() => {
     const dateKey = proposalDate.toISOString().slice(0, 10).replace(/-/g, "");
     const vehicleKey = selectedVehicleId || "NEW";
-    return `ADINN-RS-${dateKey}-${vehicleKey}`;
-  }, [proposalDate, selectedVehicleId]);
+    const variantKey = selectedVehicleVariantId
+      ? `-${selectedVehicleVariantId}`
+      : "";
+    return `ADINN-RS-${dateKey}-${vehicleKey}${variantKey}`;
+  }, [proposalDate, selectedVehicleId, selectedVehicleVariantId]);
 
   const proposalNumber =
     activeQuotationMeta?.quotationNumber ||
@@ -742,13 +1263,39 @@ export default function RoadshowQO() {
   useEffect(() => {
     if (!selectedVehicle) return;
 
-    const nextPricing = getDefaultPricing(selectedVehicle, region);
+    const nextVariantId = selectedVehicleVariant
+      ? String(selectedVehicleVariant.id)
+      : "";
+
+    setSelectedVehicleVariantId((currentVariantId) =>
+      currentVariantId === nextVariantId ? currentVariantId : nextVariantId,
+    );
+
+    const nextPricing = getDefaultPricing(
+      selectedVehicle,
+      region,
+      selectedVehicleVariant,
+    );
+
+    const nextPackageDetails = getPackageDetails(
+      selectedVehicle,
+      selectedVehicleVariant,
+    );
+    const nextMinimumDays = nextPackageDetails.minimumDays || 10;
 
     setPricingDetails(nextPricing);
-    setKmLimit(60);
-    setMinimumDays(10);
+    setLeastSellingPriceInput(String(nextPricing.vehicleRate || ""));
+    setLeastSellingPriceError("");
+    setCampaignDaysError("");
+    setKmLimit(nextPackageDetails.kmLimit);
+    setMinimumDays(nextMinimumDays);
+    setDays((currentDays) => {
+      const nextDays = Math.max(currentDays, nextMinimumDays);
+      setDaysInput(String(nextDays));
+      return nextDays;
+    });
     setActiveQuotationMeta(null);
-  }, [selectedVehicle, region]);
+  }, [selectedVehicle, selectedVehicleVariant, region]);
 
   useEffect(() => {
     const handleAfterPrint = () => setIsPdfMode(false);
@@ -764,51 +1311,81 @@ export default function RoadshowQO() {
     return getRtoBillingMonths(days);
   }, [days]);
 
-  const quoteLineItems = useMemo<QuoteLineItem[]>(() => {
+  const buildQuoteLineItemsForValues = ({
+    pricingValue = pricingDetails,
+    quantityValue = quantity,
+    daysValue = days,
+    promoterQuantityValue = promoterQuantity,
+    rtoBillingMonthsValue = getRtoBillingMonths(daysValue),
+  }: {
+    pricingValue?: PricingDetails;
+    quantityValue?: number;
+    daysValue?: number;
+    promoterQuantityValue?: number;
+    rtoBillingMonthsValue?: number;
+  } = {}) => {
     const effectivePowerBackupRate =
-      includeLed55 && pricingDetails.powerBackup <= 0
-        ? POWER_BACKUP_ADDON_RATE_PER_DAY
-        : pricingDetails.powerBackup;
+      pricingValue.powerBackup > 0
+        ? pricingValue.powerBackup
+        : POWER_BACKUP_ADDON_RATE_PER_DAY;
+
+    const actualVehicleRate =
+      selectedVehicleRate > 0 ? selectedVehicleRate : pricingValue.vehicleRate;
+    const finalVehicleRate = pricingValue.vehicleRate;
+    const vehicleDiscountRate = Math.max(
+      actualVehicleRate - finalVehicleRate,
+      0,
+    );
+    const actualVehicleAmount = actualVehicleRate * quantityValue * daysValue;
+    const finalVehicleAmount = finalVehicleRate * quantityValue * daysValue;
+    const vehicleDiscountAmount =
+      vehicleDiscountRate * quantityValue * daysValue;
 
     const items: QuoteLineItem[] = [
       {
         label: "Vehicle Rental",
-        description: selectedVehicle?.name || "Selected campaign vehicle",
-        rateLabel: `${formatPrice(pricingDetails.vehicleRate)} / day`,
-        periodLabel: `${days} day(s)`,
-        quantityLabel: `${quantity}`,
-        formulaLabel: `${formatPrice(pricingDetails.vehicleRate)} × ${days} day(s) × ${quantity} vehicle(s)`,
-        amount: pricingDetails.vehicleRate * quantity * days,
+        description: selectedVehicleDisplayName,
+        rateLabel: `${formatPrice(finalVehicleRate)} / day`,
+        periodLabel: `${daysValue} day(s)`,
+        quantityLabel: `${quantityValue}`,
+        formulaLabel: `${formatPrice(finalVehicleRate)} × ${daysValue} day(s) × ${quantityValue} vehicle(s)`,
+        amount: finalVehicleAmount,
+        actualRate: actualVehicleRate,
+        finalRate: finalVehicleRate,
+        discountRate: vehicleDiscountRate,
+        actualAmount: actualVehicleAmount,
+        discountAmount: vehicleDiscountAmount,
       },
       {
         label: "Branding Cost",
         description: `${getRegionLabel(region)} vehicle branding production and application support`,
-        rateLabel: `${formatPrice(pricingDetails.brandingCost)} / vehicle`,
+        rateLabel: `${formatPrice(pricingValue.brandingCost)} / vehicle`,
         periodLabel: "One-time",
-        quantityLabel: `${quantity}`,
-        formulaLabel: `${formatPrice(pricingDetails.brandingCost)} × ${quantity} vehicle(s)`,
-        amount: pricingDetails.brandingCost * quantity,
+        quantityLabel: `${quantityValue}`,
+        formulaLabel: `${formatPrice(pricingValue.brandingCost)} × ${quantityValue} vehicle(s)`,
+        amount: pricingValue.brandingCost * quantityValue,
       },
       {
         label: "RTO Permission",
-        description: `${getRegionLabel(region)} permission charged for every 28 days. ${days} day(s) usage considered as ${rtoBillingMonths} month(s).`,
-        rateLabel: `${formatPrice(pricingDetails.rtoPermission)} / 28 days / vehicle`,
-        periodLabel: `${rtoBillingMonths} billing month(s)`,
-        quantityLabel: `${quantity}`,
-        formulaLabel: `${formatPrice(pricingDetails.rtoPermission)} × ${rtoBillingMonths} month(s) × ${quantity} vehicle(s)`,
-        amount: pricingDetails.rtoPermission * rtoBillingMonths * quantity,
+        description: `Monthly ${getRegionLabel(region)} Permission Charges.`,
+        rateLabel: `${formatPrice(pricingValue.rtoPermission)} / vehicle`,
+        periodLabel: `${rtoBillingMonthsValue} billing month(s)`,
+        quantityLabel: `${quantityValue}`,
+        formulaLabel: `${formatPrice(pricingValue.rtoPermission)} × ${rtoBillingMonthsValue} month(s) × ${quantityValue} vehicle(s)`,
+        amount:
+          pricingValue.rtoPermission * rtoBillingMonthsValue * quantityValue,
       },
     ];
 
-    if (pricingDetails.upDownCharge > 0) {
+    if (pricingValue.upDownCharge > 0) {
       items.push({
         label: "Up & Down Charge",
         description: "Campaign vehicle movement support",
-        rateLabel: `${formatPrice(pricingDetails.upDownCharge)} / vehicle`,
+        rateLabel: `${formatPrice(pricingValue.upDownCharge)} / vehicle`,
         periodLabel: "One-time",
-        quantityLabel: `${quantity} vehicle(s)`,
-        formulaLabel: `${formatPrice(pricingDetails.upDownCharge)} × ${quantity} vehicle(s)`,
-        amount: pricingDetails.upDownCharge * quantity,
+        quantityLabel: `${quantityValue} vehicle(s)`,
+        formulaLabel: `${formatPrice(pricingValue.upDownCharge)} × ${quantityValue} vehicle(s)`,
+        amount: pricingValue.upDownCharge * quantityValue,
       });
     }
 
@@ -816,11 +1393,11 @@ export default function RoadshowQO() {
       items.push({
         label: "Promoter Support",
         description: "On-ground campaign promoter support",
-        rateLabel: `${formatPrice(pricingDetails.promoterCost)} / day`,
-        periodLabel: `${days} day(s)`,
-        quantityLabel: `${promoterQuantity}`,
-        formulaLabel: `${formatPrice(pricingDetails.promoterCost)} × ${days} day(s) × ${promoterQuantity} promoter(s)`,
-        amount: pricingDetails.promoterCost * promoterQuantity * days,
+        rateLabel: `${formatPrice(pricingValue.promoterCost)} / day`,
+        periodLabel: `${daysValue} day(s)`,
+        quantityLabel: `${promoterQuantityValue}`,
+        formulaLabel: `${formatPrice(pricingValue.promoterCost)} × ${daysValue} day(s) × ${promoterQuantityValue} promoter(s)`,
+        amount: pricingValue.promoterCost * promoterQuantityValue * daysValue,
       });
     }
 
@@ -828,43 +1405,41 @@ export default function RoadshowQO() {
       items.push({
         label: '43" LED TV',
         description: '43" LED TV add-on for campaign display',
-        rateLabel: `${formatPrice(pricingDetails.ledCost)} / day`,
-        periodLabel: `${days} day(s)`,
-        quantityLabel: `${quantity}`,
-        formulaLabel: `${formatPrice(pricingDetails.ledCost)} × ${days} day(s) × ${quantity} unit(s)`,
-        amount: pricingDetails.ledCost * quantity * days,
+        rateLabel: `${formatPrice(pricingValue.ledCost)} / day`,
+        periodLabel: `${daysValue} day(s)`,
+        quantityLabel: `${quantityValue}`,
+        formulaLabel: `${formatPrice(pricingValue.ledCost)} × ${daysValue} day(s) × ${quantityValue} unit(s)`,
+        amount: pricingValue.ledCost * quantityValue * daysValue,
       });
     }
 
-    if (includeLed55) {
-      items.push({
-        label: '55" LED TV',
-        description: '55" LED TV add-on for premium campaign display',
-        rateLabel: `${formatPrice(pricingDetails.led55Cost)} / day`,
-        periodLabel: `${days} day(s)`,
-        quantityLabel: `${quantity}`,
-        formulaLabel: `${formatPrice(pricingDetails.led55Cost)} × ${days} day(s) × ${quantity} unit(s)`,
-        amount: pricingDetails.led55Cost * quantity * days,
-      });
-    }
-
-    if (includePowerBackup || includeLed55) {
+    if (includePowerBackup) {
       items.push({
         label: "Power Backup",
-        description: includeLed55
-          ? 'Mandatory power backup required for the selected 55" LED TV add-on.'
-          : "Power backup add-on for campaign support",
+        description: "Power backup add-on for campaign support",
         rateLabel: `${formatPrice(effectivePowerBackupRate)} / day`,
-        periodLabel: `${days} day(s)`,
-        quantityLabel: `${quantity}`,
-        formulaLabel: `${formatPrice(effectivePowerBackupRate)} × ${days} day(s) × ${quantity} unit(s)`,
-        amount: effectivePowerBackupRate * quantity * days,
+        periodLabel: `${daysValue} day(s)`,
+        quantityLabel: `${quantityValue}`,
+        formulaLabel: `${formatPrice(effectivePowerBackupRate)} × ${daysValue} day(s) × ${quantityValue} unit(s)`,
+        amount: effectivePowerBackupRate * quantityValue * daysValue,
       });
     }
 
     return items.filter((item) => item.amount > 0);
+  };
+
+  const quoteLineItems = useMemo<QuoteLineItem[]>(() => {
+    return buildQuoteLineItemsForValues({
+      pricingValue: pricingDetails,
+      quantityValue: quantity,
+      daysValue: days,
+      promoterQuantityValue: promoterQuantity,
+      rtoBillingMonthsValue: rtoBillingMonths,
+    });
   }, [
     selectedVehicle,
+    selectedVehicleVariant,
+    selectedVehicleDisplayName,
     pricingDetails,
     quantity,
     promoterQuantity,
@@ -872,7 +1447,6 @@ export default function RoadshowQO() {
     region,
     includePromoter,
     includeLed,
-    includeLed55,
     includePowerBackup,
     rtoBillingMonths,
   ]);
@@ -887,6 +1461,26 @@ export default function RoadshowQO() {
 
   const grandTotal = subtotal + gstAmount;
 
+  const totalDiscountAmount = useMemo(() => {
+    return quoteLineItems.reduce(
+      (total, item) => total + (item.discountAmount || 0),
+      0,
+    );
+  }, [quoteLineItems]);
+
+  const actualSubtotal = subtotal + totalDiscountAmount;
+
+  const vehicleActualRate =
+    selectedVehicleRate > 0 ? selectedVehicleRate : pricingDetails.vehicleRate;
+  const vehicleFinalRate = pricingDetails.vehicleRate;
+  const vehicleDiscountPerDay = Math.max(
+    vehicleActualRate - vehicleFinalRate,
+    0,
+  );
+  const vehicleActualAmount = vehicleActualRate * quantity * days;
+  const vehicleDiscountAmount = vehicleDiscountPerDay * quantity * days;
+  const vehicleRemainingAmount = vehicleFinalRate * quantity * days;
+
   const selectedAddOns = useMemo(() => {
     const addOns: string[] = [];
 
@@ -898,24 +1492,12 @@ export default function RoadshowQO() {
       addOns.push('43" LED TV');
     }
 
-    if (includeLed55) {
-      addOns.push('55" LED TV');
-    }
-
-    if (includePowerBackup || includeLed55) {
-      addOns.push(
-        includeLed55 ? 'Power backup (mandatory for 55" LED TV)' : "Power backup",
-      );
+    if (includePowerBackup) {
+      addOns.push("Power backup");
     }
 
     return addOns.length ? addOns : ["No optional add-ons selected"];
-  }, [
-    includePromoter,
-    includeLed,
-    includeLed55,
-    includePowerBackup,
-    promoterQuantity,
-  ]);
+  }, [includePromoter, includeLed, includePowerBackup, promoterQuantity]);
 
   const isCompactProposal = quoteLineItems.length >= 6;
 
@@ -927,13 +1509,28 @@ export default function RoadshowQO() {
     clearSavedQuotation();
     setSelectedCategory(category);
 
-    const firstVehicle = vehicles.find(
+    const firstVehicle = getVisibleVehicles(vehicles).find(
       (vehicle) => normalizeCategory(vehicle.category) === category,
     );
 
     if (firstVehicle) {
       setSelectedVehicleId(String(firstVehicle.id));
+      setSelectedVehicleVariantId(getDefaultVariantId(firstVehicle));
+    } else {
+      setSelectedVehicleId("");
+      setSelectedVehicleVariantId("");
     }
+  };
+
+  const handleVehicleSelect = (vehicle: Vehicle) => {
+    clearSavedQuotation();
+    setSelectedVehicleId(String(vehicle.id));
+    setSelectedVehicleVariantId(getDefaultVariantId(vehicle));
+  };
+
+  const handleVariantSelect = (variant: VehicleVariant) => {
+    clearSavedQuotation();
+    setSelectedVehicleVariantId(String(variant.id));
   };
 
   const handleClientChange = (field: keyof ClientDetails, value: string) => {
@@ -960,27 +1557,244 @@ export default function RoadshowQO() {
   const handlePricingChange = (field: keyof PricingDetails, value: string) => {
     clearSavedQuotation();
 
-    const numericValue = Number(value);
-    const safeValue = Number.isFinite(numericValue) ? numericValue : 0;
-    const nextValue =
-      field === "powerBackup" && includeLed55 && safeValue <= 0
-        ? POWER_BACKUP_ADDON_RATE_PER_DAY
-        : safeValue;
+    const safeValue = parseNumberText(value, 0);
 
     setPricingDetails((current) => ({
       ...current,
-      [field]: nextValue,
+      [field]: safeValue,
     }));
+  };
+
+  const handleLeastSellingPriceChange = (value: string) => {
+    clearSavedQuotation();
+    const digitsOnly = sanitizeNumberText(value);
+    setLeastSellingPriceInput(digitsOnly);
+
+    if (!selectedVehicle) {
+      setLeastSellingPriceError("");
+      return;
+    }
+
+    if (!digitsOnly.trim()) {
+      setLeastSellingPriceError(
+        `Allowed vehicle rate is ${formatPrice(
+          selectedVehicleLeastSellingRate,
+        )} to ${formatPrice(selectedVehicleMaxRate)} only.`,
+      );
+      return;
+    }
+
+    const numericValue = Number(digitsOnly);
+
+    if (!Number.isFinite(numericValue)) {
+      setLeastSellingPriceError(
+        `Allowed vehicle rate is ${formatPrice(
+          selectedVehicleLeastSellingRate,
+        )} to ${formatPrice(selectedVehicleMaxRate)} only.`,
+      );
+      return;
+    }
+
+    if (
+      numericValue < selectedVehicleLeastSellingRate ||
+      numericValue > selectedVehicleMaxRate
+    ) {
+      setLeastSellingPriceError(
+        `Allowed vehicle rate is ${formatPrice(
+          selectedVehicleLeastSellingRate,
+        )} to ${formatPrice(selectedVehicleMaxRate)} only.`,
+      );
+      return;
+    }
+
+    setLeastSellingPriceError("");
+    setPricingDetails((current) => ({
+      ...current,
+      vehicleRate: numericValue,
+    }));
+  };
+
+  const handleLeastSellingPriceBlur = () => {
+    if (leastSellingPriceError) {
+      setLeastSellingPriceInput(String(pricingDetails.vehicleRate || ""));
+      setLeastSellingPriceError("");
+    }
+  };
+
+  const handleQuantityChange = (value: string) => {
+    clearSavedQuotation();
+
+    const digitsOnly = sanitizeNumberText(value);
+    setQuantityInput(digitsOnly);
+
+    if (!digitsOnly) {
+      setQuantityError("");
+      return;
+    }
+
+    const nextQuantity = Number(digitsOnly);
+
+    if (!Number.isFinite(nextQuantity)) {
+      setQuantityError("Please enter a valid number of vehicles.");
+      return;
+    }
+
+    if (nextQuantity < 1) {
+      setQuantityError("Minimum 1 vehicle is required.");
+      return;
+    }
+
+    setQuantity(nextQuantity);
+    setQuantityError("");
+  };
+
+  const handleQuantityBlur = () => {
+    if (!quantityInput) {
+      setQuantityInput(String(quantity));
+      setQuantityError("");
+      return;
+    }
+
+    const nextQuantity = Number(quantityInput);
+
+    if (!Number.isFinite(nextQuantity) || nextQuantity < 1) {
+      setQuantity(1);
+      setQuantityInput("1");
+      setQuantityError("");
+    }
+  };
+
+  const handleDaysChange = (value: string) => {
+    clearSavedQuotation();
+
+    const digitsOnly = sanitizeNumberText(value);
+    setDaysInput(digitsOnly);
+
+    if (!digitsOnly) {
+      setCampaignDaysError("");
+      return;
+    }
+
+    const nextDays = Number(digitsOnly);
+
+    if (!Number.isFinite(nextDays)) {
+      setCampaignDaysError("Please enter a valid number of days.");
+      return;
+    }
+
+    if (nextDays < minimumDays) {
+      setCampaignDaysError(
+        `Minimum booking for the selected vehicle is ${minimumDays} days. Please enter ${minimumDays} or above.`,
+      );
+      return;
+    }
+
+    setDays(nextDays);
+    setCampaignDaysError("");
+  };
+
+  const handleDaysBlur = () => {
+    if (!daysInput) {
+      setDaysInput(String(days));
+      setCampaignDaysError("");
+      return;
+    }
+
+    const nextDays = Number(daysInput);
+
+    if (!Number.isFinite(nextDays) || nextDays < minimumDays) {
+      const safeDays = Math.max(days, minimumDays);
+      setDays(safeDays);
+      setDaysInput(String(safeDays));
+      setCampaignDaysError("");
+    }
+  };
+
+  const handlePromoterQuantityChange = (value: string) => {
+    clearSavedQuotation();
+
+    const digitsOnly = sanitizeNumberText(value);
+    setPromoterQuantityInput(digitsOnly);
+
+    if (!digitsOnly) {
+      setPromoterQuantity(1);
+      return;
+    }
+
+    const nextPromoterQuantity = Number(digitsOnly);
+
+    if (!Number.isFinite(nextPromoterQuantity) || nextPromoterQuantity < 1) {
+      return;
+    }
+
+    setPromoterQuantity(nextPromoterQuantity);
+  };
+
+  const handlePromoterQuantityBlur = () => {
+    if (!includePromoter) {
+      return;
+    }
+
+    const nextPromoterQuantity = Number(
+      sanitizeNumberText(promoterQuantityInput),
+    );
+
+    if (
+      !promoterQuantityInput ||
+      !Number.isFinite(nextPromoterQuantity) ||
+      nextPromoterQuantity < 1
+    ) {
+      setPromoterQuantity(1);
+      setPromoterQuantityInput("1");
+      return;
+    }
+
+    setPromoterQuantity(nextPromoterQuantity);
+    setPromoterQuantityInput(String(nextPromoterQuantity));
+  };
+
+  const handlePromoterToggle = (checked: boolean) => {
+    clearSavedQuotation();
+    setIncludePromoter(checked);
+
+    if (checked) {
+      const currentPromoterQuantity = Number(
+        sanitizeNumberText(promoterQuantityInput),
+      );
+
+      if (
+        !promoterQuantityInput ||
+        !Number.isFinite(currentPromoterQuantity) ||
+        currentPromoterQuantity < 1
+      ) {
+        setPromoterQuantity(1);
+        setPromoterQuantityInput("1");
+      }
+    }
+  };
+
+  const handleGstPercentChange = (value: string) => {
+    clearSavedQuotation();
+    setGstPercent(clampNumber(value, 0));
   };
 
   const handleResetPricing = () => {
     clearSavedQuotation();
-    setPricingDetails(getDefaultPricing(selectedVehicle, region));
+    const defaultPricing = getDefaultPricing(
+      selectedVehicle,
+      region,
+      selectedVehicleVariant,
+    );
+    setPricingDetails(defaultPricing);
+    setLeastSellingPriceInput(String(defaultPricing.vehicleRate || ""));
+    setLeastSellingPriceError("");
+    setCampaignDaysError("");
+    setAddOnMessage("");
     setIncludePromoter(false);
     setIncludeLed(false);
-    setIncludeLed55(false);
     setIncludePowerBackup(false);
     setPromoterQuantity(1);
+    setPromoterQuantityInput("1");
   };
 
   const handleLedToggle = (checked: boolean) => {
@@ -988,42 +1802,41 @@ export default function RoadshowQO() {
     setIncludeLed(checked);
 
     if (checked) {
+      setIncludePowerBackup(true);
+      setAddOnMessage(
+        'Power Backup is mandatory with 43" LED TV and has been added automatically.',
+      );
       setPricingDetails((current) => ({
         ...current,
         ledCost: LED_TV_ADDON_RATE_PER_DAY,
-      }));
-    }
-  };
-
-  const handleLed55Toggle = (checked: boolean) => {
-    clearSavedQuotation();
-    setIncludeLed55(checked);
-
-    if (checked) {
-      setIncludePowerBackup(true);
-      setPricingDetails((current) => ({
-        ...current,
-        led55Cost:
-          current.led55Cost > 0
-            ? current.led55Cost
-            : LED_55_TV_ADDON_RATE_PER_DAY,
         powerBackup:
           current.powerBackup > 0
             ? current.powerBackup
             : POWER_BACKUP_ADDON_RATE_PER_DAY,
       }));
+      return;
     }
+
+    setAddOnMessage(
+      includePowerBackup
+        ? '43" LED TV removed. Power Backup is still selected; you can remove it if not needed.'
+        : "",
+    );
   };
 
   const handlePowerBackupToggle = (checked: boolean) => {
     clearSavedQuotation();
 
-    if (includeLed55 && !checked) {
+    if (includeLed && !checked) {
       setIncludePowerBackup(true);
+      setAddOnMessage(
+        'Power Backup cannot be removed while 43" LED TV is selected.',
+      );
       return;
     }
 
     setIncludePowerBackup(checked);
+    setAddOnMessage("");
 
     if (checked) {
       setPricingDetails((current) => ({
@@ -1047,9 +1860,7 @@ export default function RoadshowQO() {
     setUploadedLogo(imageUrl);
   };
 
-  const getSignatureCropPoint = (
-    event: React.PointerEvent<HTMLDivElement>,
-  ) => {
+  const getSignatureCropPoint = (event: React.PointerEvent<HTMLDivElement>) => {
     const cropFrame = signatureCropImageFrameRef.current || event.currentTarget;
     const bounds = cropFrame.getBoundingClientRect();
     const relativeX = ((event.clientX - bounds.left) / bounds.width) * 100;
@@ -1089,7 +1900,9 @@ export default function RoadshowQO() {
     if (!isSelectingSignatureCrop || !signatureCropStartRef.current) return;
 
     const point = getSignatureCropPoint(event);
-    setSignatureCrop(normalizeCropFromPoints(signatureCropStartRef.current, point));
+    setSignatureCrop(
+      normalizeCropFromPoints(signatureCropStartRef.current, point),
+    );
   };
 
   const handleSignatureCropPointerUp = (
@@ -1098,7 +1911,10 @@ export default function RoadshowQO() {
     if (!signatureCropStartRef.current) return;
 
     const point = getSignatureCropPoint(event);
-    const nextCrop = normalizeCropFromPoints(signatureCropStartRef.current, point);
+    const nextCrop = normalizeCropFromPoints(
+      signatureCropStartRef.current,
+      point,
+    );
 
     if (
       nextCrop.width < MIN_SIGNATURE_CROP_SIZE ||
@@ -1230,7 +2046,69 @@ export default function RoadshowQO() {
     }
   };
 
-  const buildRoadshowQuotationPayload = () => {
+  const buildRoadshowQuotationPayload = (
+    overrides: {
+      quantity?: number;
+      promoterQuantity?: number;
+      days?: number;
+      gstPercent?: number;
+      pricingDetails?: PricingDetails;
+      quoteLineItems?: QuoteLineItem[];
+      subtotal?: number;
+      gstAmount?: number;
+      grandTotal?: number;
+      rtoBillingMonths?: number;
+    } = {},
+  ) => {
+    const effectiveQuantity = overrides.quantity ?? quantity;
+    const effectivePromoterQuantity =
+      overrides.promoterQuantity ?? promoterQuantity;
+    const effectiveDays = overrides.days ?? days;
+    const effectiveGstPercent = overrides.gstPercent ?? gstPercent;
+    const effectivePricingDetails = overrides.pricingDetails ?? pricingDetails;
+    const effectiveRtoBillingMonths =
+      overrides.rtoBillingMonths ?? getRtoBillingMonths(effectiveDays);
+    const effectiveQuoteLineItems =
+      overrides.quoteLineItems ??
+      buildQuoteLineItemsForValues({
+        pricingValue: effectivePricingDetails,
+        quantityValue: effectiveQuantity,
+        daysValue: effectiveDays,
+        promoterQuantityValue: effectivePromoterQuantity,
+        rtoBillingMonthsValue: effectiveRtoBillingMonths,
+      });
+    const effectiveSubtotal =
+      overrides.subtotal ??
+      effectiveQuoteLineItems.reduce((total, item) => total + item.amount, 0);
+    const effectiveGstAmount =
+      overrides.gstAmount ?? effectiveSubtotal * (effectiveGstPercent / 100);
+    const effectiveGrandTotal =
+      overrides.grandTotal ?? effectiveSubtotal + effectiveGstAmount;
+    const effectiveTotalDiscountAmount = effectiveQuoteLineItems.reduce(
+      (total, item) => total + (item.discountAmount || 0),
+      0,
+    );
+    const effectiveActualSubtotal =
+      effectiveSubtotal + effectiveTotalDiscountAmount;
+
+    const effectiveSelectedAddOns: string[] = [];
+
+    if (includePromoter) {
+      effectiveSelectedAddOns.push(`${effectivePromoterQuantity} promoter(s)`);
+    }
+
+    if (includeLed) {
+      effectiveSelectedAddOns.push('43" LED TV');
+    }
+
+    if (includePowerBackup) {
+      effectiveSelectedAddOns.push("Power backup");
+    }
+
+    const selectedAddOnsForPayload = effectiveSelectedAddOns.length
+      ? effectiveSelectedAddOns
+      : ["No optional add-ons selected"];
+
     return {
       payloadVersion: "roadshow-quotation-v1",
       source: "roadshow_quotation_generator",
@@ -1273,19 +2151,37 @@ export default function RoadshowQO() {
         regionLabel: getRegionLabel(region),
         selectedCategory,
         selectedVehicleId,
-        quantity,
-        promoterQuantity,
-        days,
+        selectedVehicleVariantId,
+        selectedVehicleVariantLabel: selectedVehicleVariant?.label || "",
+        selectedVehicleVariantKmPerDay: selectedPackageDetails.kmLimit || null,
+        selectedVehicleVariantDailyKmLabel:
+          selectedPackageDetails.dailyKmLabel || "",
+        selectedVehicleVariantPricePerDay:
+          effectivePricingDetails.vehicleRate || null,
+        selectedVehicleVariantMasterPricePerDay: selectedVehicleRate || null,
+        selectedVehicleVariantLeastSellingPricingPerDay:
+          selectedVehicleVariant?.leastSellingPricingPerDay ||
+          selectedVehicle?.leastSellingPricingPerDay ||
+          null,
+        selectedVehicleVariantExtraKm: selectedPackageDetails.extraKm || "",
+        selectedVehicleVariantExtraHour: selectedPackageDetails.extraHour || "",
+        selectedVehicleVariantMinimumDays:
+          selectedPackageDetails.minimumDays || null,
+        quantity: effectiveQuantity,
+        promoterQuantity: effectivePromoterQuantity,
+        days: effectiveDays,
         kmLimit,
         minimumDays,
-        gstPercent,
+        gstPercent: effectiveGstPercent,
         rtoPermissionValidityDays: RTO_PERMISSION_VALIDITY_DAYS,
-        rtoBillingMonths,
+        rtoBillingMonths: effectiveRtoBillingMonths,
       },
 
       vehicle: {
         selectedCategory,
         selectedVehicleId,
+        selectedVehicleVariantId,
+        selectedVehicleVariantSnapshot: selectedVehicleVariant || null,
         selectedVehicleSnapshot: selectedVehicle
           ? {
               ...selectedVehicle,
@@ -1297,26 +2193,27 @@ export default function RoadshowQO() {
       pricing: {
         currency: "INR",
         pricingDetails: {
-          ...pricingDetails,
+          ...effectivePricingDetails,
         },
-        quoteLineItems: quoteLineItems.map((item, index) => ({
+        quoteLineItems: effectiveQuoteLineItems.map((item, index) => ({
           serialNumber: index + 1,
           ...item,
         })),
-        subtotal,
-        gstPercent,
-        gstAmount,
-        grandTotal,
+        actualSubtotal: effectiveActualSubtotal,
+        totalDiscountAmount: effectiveTotalDiscountAmount,
+        subtotal: effectiveSubtotal,
+        gstPercent: effectiveGstPercent,
+        gstAmount: effectiveGstAmount,
+        grandTotal: effectiveGrandTotal,
         advancePercent: 50,
-        advanceAmount: grandTotal * 0.5,
+        advanceAmount: effectiveGrandTotal * 0.5,
       },
 
       addOns: {
         includePromoter,
         includeLed,
-        includeLed55,
-        includePowerBackup: includePowerBackup || includeLed55,
-        selectedAddOns,
+        includePowerBackup,
+        selectedAddOns: selectedAddOnsForPayload,
       },
 
       assets: {
@@ -1339,7 +2236,7 @@ export default function RoadshowQO() {
   };
 
   const resetQuotationForm = async () => {
-    const firstVehicle = vehicles[0];
+    const firstVehicle = getVisibleVehicles(vehicles)[0];
     const defaultRegion: RegionKey = "chennai";
     const nextProposalDate = new Date();
 
@@ -1357,15 +2254,20 @@ export default function RoadshowQO() {
     setPreparedByDetails({ ...PREPARED_BY_DEFAULTS });
 
     setQuantity(1);
+    setQuantityInput("1");
+    setQuantityError("");
     setPromoterQuantity(1);
+    setPromoterQuantityInput("1");
     setDays(10);
+    setDaysInput("10");
     setKmLimit(60);
     setMinimumDays(10);
     setGstPercent(18);
+    setCampaignDaysError("");
+    setAddOnMessage("");
 
     setIncludePromoter(false);
     setIncludeLed(false);
-    setIncludeLed55(false);
     setIncludePowerBackup(false);
 
     setUploadedLogo("");
@@ -1378,13 +2280,42 @@ export default function RoadshowQO() {
     setActiveQuotationMeta(null);
 
     if (firstVehicle) {
+      const defaultVariant = getSelectedVariant(
+        firstVehicle,
+        getDefaultVariantId(firstVehicle),
+      );
+
       setSelectedCategory(normalizeCategory(firstVehicle.category));
       setSelectedVehicleId(String(firstVehicle.id));
+      setSelectedVehicleVariantId(
+        defaultVariant ? String(defaultVariant.id) : "",
+      );
+      const defaultPackageDetails = getPackageDetails(
+        firstVehicle,
+        defaultVariant,
+      );
+
+      const defaultMinimumDays = defaultPackageDetails.minimumDays || 10;
       setRegion(defaultRegion);
-      setPricingDetails(getDefaultPricing(firstVehicle, defaultRegion));
+      setKmLimit(defaultPackageDetails.kmLimit);
+      setMinimumDays(defaultMinimumDays);
+      setDays(defaultMinimumDays);
+      setDaysInput(String(defaultMinimumDays));
+      const defaultPricing = getDefaultPricing(
+        firstVehicle,
+        defaultRegion,
+        defaultVariant,
+      );
+
+      setPricingDetails(defaultPricing);
+      setLeastSellingPriceInput(String(defaultPricing.vehicleRate || ""));
+      setLeastSellingPriceError("");
+      setCampaignDaysError("");
+      setAddOnMessage("");
     } else {
       setSelectedCategory("");
       setSelectedVehicleId("");
+      setSelectedVehicleVariantId("");
       setRegion(defaultRegion);
       setPricingDetails({
         vehicleRate: 0,
@@ -1396,6 +2327,10 @@ export default function RoadshowQO() {
         powerBackup: 0,
         upDownCharge: 0,
       });
+      setLeastSellingPriceInput("");
+      setLeastSellingPriceError("");
+      setCampaignDaysError("");
+      setAddOnMessage("");
     }
 
     if (logoInputRef.current) {
@@ -1419,8 +2354,110 @@ export default function RoadshowQO() {
     window.print();
   };
 
+  const normalizeMinimumFieldsForDownload = () => {
+    const parsedQuantity = Number(sanitizeNumberText(quantityInput));
+    const normalizedQuantity =
+      Number.isFinite(parsedQuantity) && parsedQuantity >= 1
+        ? parsedQuantity
+        : 1;
+
+    const parsedDays = Number(sanitizeNumberText(daysInput));
+    const normalizedDays =
+      Number.isFinite(parsedDays) && parsedDays >= minimumDays
+        ? parsedDays
+        : minimumDays;
+
+    const parsedPromoterQuantity = Number(
+      sanitizeNumberText(promoterQuantityInput),
+    );
+    const normalizedPromoterQuantity =
+      includePromoter &&
+      Number.isFinite(parsedPromoterQuantity) &&
+      parsedPromoterQuantity >= 1
+        ? parsedPromoterQuantity
+        : 1;
+
+    const normalizedGstPercent =
+      Number.isFinite(Number(gstPercent)) && Number(gstPercent) >= 0
+        ? Number(gstPercent)
+        : 0;
+
+    const lspDigitsOnly = sanitizeNumberText(leastSellingPriceInput);
+    const parsedLeastSellingPrice = Number(lspDigitsOnly);
+    let normalizedVehicleRate = pricingDetails.vehicleRate;
+
+    if (selectedVehicle) {
+      if (
+        !lspDigitsOnly ||
+        !Number.isFinite(parsedLeastSellingPrice) ||
+        parsedLeastSellingPrice < selectedVehicleLeastSellingRate
+      ) {
+        normalizedVehicleRate = selectedVehicleLeastSellingRate;
+      } else if (parsedLeastSellingPrice > selectedVehicleMaxRate) {
+        normalizedVehicleRate = selectedVehicleMaxRate;
+      } else {
+        normalizedVehicleRate = parsedLeastSellingPrice;
+      }
+    }
+
+    const normalizedPricingDetails = {
+      ...pricingDetails,
+      vehicleRate: normalizedVehicleRate,
+      powerBackup:
+        pricingDetails.powerBackup > 0
+          ? pricingDetails.powerBackup
+          : POWER_BACKUP_ADDON_RATE_PER_DAY,
+    };
+
+    const normalizedRtoBillingMonths = getRtoBillingMonths(normalizedDays);
+    const normalizedQuoteLineItems = buildQuoteLineItemsForValues({
+      pricingValue: normalizedPricingDetails,
+      quantityValue: normalizedQuantity,
+      daysValue: normalizedDays,
+      promoterQuantityValue: normalizedPromoterQuantity,
+      rtoBillingMonthsValue: normalizedRtoBillingMonths,
+    });
+    const normalizedSubtotal = normalizedQuoteLineItems.reduce(
+      (total, item) => total + item.amount,
+      0,
+    );
+    const normalizedGstAmount =
+      normalizedSubtotal * (normalizedGstPercent / 100);
+    const normalizedGrandTotal = normalizedSubtotal + normalizedGstAmount;
+
+    setQuantity(normalizedQuantity);
+    setQuantityInput(String(normalizedQuantity));
+    setQuantityError("");
+
+    setDays(normalizedDays);
+    setDaysInput(String(normalizedDays));
+    setCampaignDaysError("");
+
+    setPromoterQuantity(normalizedPromoterQuantity);
+    setPromoterQuantityInput(String(normalizedPromoterQuantity));
+    setGstPercent(normalizedGstPercent);
+    setPricingDetails(normalizedPricingDetails);
+    setLeastSellingPriceInput(String(normalizedVehicleRate || ""));
+    setLeastSellingPriceError("");
+
+    return {
+      quantity: normalizedQuantity,
+      promoterQuantity: normalizedPromoterQuantity,
+      days: normalizedDays,
+      gstPercent: normalizedGstPercent,
+      pricingDetails: normalizedPricingDetails,
+      quoteLineItems: normalizedQuoteLineItems,
+      subtotal: normalizedSubtotal,
+      gstAmount: normalizedGstAmount,
+      grandTotal: normalizedGrandTotal,
+      rtoBillingMonths: normalizedRtoBillingMonths,
+    };
+  };
+
   const handleDownloadPdf = async () => {
     if (isGeneratingPdf) return;
+
+    const normalizedQuoteValues = normalizeMinimumFieldsForDownload();
 
     if (!clientDetails.companyName.trim()) {
       setPdfError("Client company name is required before downloading PDF.");
@@ -1442,13 +2479,16 @@ export default function RoadshowQO() {
       setIsGeneratingPdf(true);
 
       const savedQuotation = await createRoadshowQuotation(
-        buildRoadshowQuotationPayload(),
+        buildRoadshowQuotationPayload(normalizedQuoteValues),
       );
 
       setActiveQuotationMeta({
         quotationId: savedQuotation.quotationId,
         quotationNumber: savedQuotation.quotationNumber,
       });
+
+      const stableLogoDataUrl = await imageSourceToDataUrl(displayLogo);
+      setPdfLogoSrc(stableLogoDataUrl);
 
       setIsPdfMode(true);
       document.body.classList.add("pdfExporting");
@@ -1533,6 +2573,7 @@ export default function RoadshowQO() {
       );
     } finally {
       document.body.classList.remove("pdfExporting");
+      setPdfLogoSrc("");
       setIsPdfMode(false);
       setIsGeneratingPdf(false);
     }
@@ -1562,8 +2603,8 @@ export default function RoadshowQO() {
             </div>
 
             <div>
-              <h1>ADINN</h1>
-              <p>Roadshow Quotation Generator</p>
+              <h1>Roadshow Quotation Studio</h1>
+              <p>ADINN · Premium Outdoor Campaign Proposals</p>
             </div>
           </div>
 
@@ -1586,7 +2627,7 @@ export default function RoadshowQO() {
               onClick={handleDownloadPdf}
               disabled={isGeneratingPdf}
             >
-              {isGeneratingPdf ? "Preparing PDF..." : "Download PDF"}
+              {isGeneratingPdf ? "Preparing PDF..." : "Download Proposal PDF"}
             </button>
 
             <input
@@ -1606,7 +2647,9 @@ export default function RoadshowQO() {
           {pdfError && <div className="qoError">{pdfError}</div>}
 
           <section className="qoCard">
-            <h2>1. Vehicle Category</h2>
+            <h2>
+              <span className="qoStepBadge">01</span> Vehicle Setup · Category
+            </h2>
 
             {isLoadingVehicles ? (
               <div className="qoLoading">Loading vehicle categories...</div>
@@ -1636,37 +2679,308 @@ export default function RoadshowQO() {
           </section>
 
           <section className="qoCard">
-            <h2>2. Select Vehicle</h2>
+            <h2>
+              <span className="qoStepBadge">02</span> Vehicle Setup · Select
+              Vehicle & Package
+            </h2>
 
             {isLoadingVehicles ? (
               <div className="qoLoading">Loading vehicles...</div>
             ) : (
-              <div className="qoOptionGrid two">
-                {categoryVehicles.map((vehicle) => (
-                  <button
-                    key={vehicle.id}
-                    type="button"
-                    className={`qoSelectCard ${
-                      selectedVehicleId === String(vehicle.id) ? "active" : ""
-                    }`}
-                    onClick={() => {
-                      clearSavedQuotation();
-                      setSelectedVehicleId(String(vehicle.id));
-                    }}
-                  >
-                    <strong>{vehicle.name}</strong>
-                    <span>
-                      {formatPrice(vehicle.pricePerDay)} /day · {kmLimit} km/day
-                      · Min {minimumDays}d
-                    </span>
-                  </button>
-                ))}
-              </div>
+              <>
+                <div className="qoOptionGrid two">
+                  {categoryVehicles.map((vehicle) => (
+                    <button
+                      key={vehicle.id}
+                      type="button"
+                      className={`qoSelectCard ${
+                        selectedVehicleId === String(vehicle.id) ? "active" : ""
+                      }`}
+                      onClick={() => handleVehicleSelect(vehicle)}
+                    >
+                      <strong>{vehicle.name}</strong>
+                      {/* <span>{getVehicleCardSubtitle(vehicle)}</span> */}
+                    </button>
+                  ))}
+                </div>
+
+                {selectedVehicle && selectedVehicleVariants.length === 0 && (
+                  <div className="qoVariantSelector">
+                    <div className="qoSectionHeader">
+                      <div>
+                        <h3>Selected Vehicle Details</h3>
+                        <p>
+                          These values are loaded from the selected vehicle and
+                          will update automatically in the quotation.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(155px, 1fr))",
+                        gap: "12px",
+                      }}
+                    >
+                      <div
+                        className="qoSelectCard active"
+                        style={{
+                          cursor: "default",
+                          alignItems: "flex-start",
+                          textAlign: "left",
+                          padding: "18px 14px",
+                          borderRadius: "18px",
+                          minHeight: "190px",
+                        }}
+                      >
+                        <strong>{selectedVehicle?.name}</strong>
+
+                        <span
+                          style={{
+                            display: "block",
+                            marginTop: "10px",
+                            color: "#475569",
+                            fontWeight: 800,
+                          }}
+                        >
+                          {formatPrice(selectedVehicleRate)} / per day
+                        </span>
+
+                        {selectedVehicleLeastSellingRate <
+                          selectedVehicleRate && (
+                          <span
+                            style={{
+                              display: "block",
+                              marginTop: "5px",
+                              color: "#64748b",
+                              fontSize: "13px",
+                            }}
+                          >
+                            LSP: {formatPrice(selectedVehicleLeastSellingRate)}
+                          </span>
+                        )}
+
+                        <span
+                          style={{
+                            display: "grid",
+                            gap: "10px",
+                            marginTop: "12px",
+                            fontSize: "13px",
+                            lineHeight: 1.25,
+                            color: "#64748b",
+                          }}
+                        >
+                          <span>
+                            Daily KM Limit:
+                            <strong
+                              style={{
+                                display: "block",
+                                color: "#334155",
+                                fontSize: "14px",
+                              }}
+                            >
+                              {selectedPackageDetails.kmLimit} km
+                            </strong>
+                          </span>
+
+                          {selectedPackageDetails.extraKm && (
+                            <span>
+                              Extra KM:
+                              <strong
+                                style={{
+                                  display: "block",
+                                  color: "#334155",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                {selectedPackageDetails.extraKm}
+                              </strong>
+                            </span>
+                          )}
+
+                          {selectedPackageDetails.extraHour && (
+                            <span>
+                              Extra Hour:
+                              <strong
+                                style={{
+                                  display: "block",
+                                  color: "#334155",
+                                  fontSize: "14px",
+                                }}
+                              >
+                                {selectedPackageDetails.extraHour}
+                              </strong>
+                            </span>
+                          )}
+
+                          <span>
+                            Minimum:
+                            <strong
+                              style={{
+                                display: "block",
+                                color: "#334155",
+                                fontSize: "14px",
+                              }}
+                            >
+                              {selectedPackageDetails.minimumDays} days
+                            </strong>
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedVehicleVariants.length > 0 && (
+                  <div className="qoVariantSelector">
+                    <div className="qoSectionHeader">
+                      <div>
+                        <h3>Choose KM Package</h3>
+                        <p>
+                          Select the package. The per-day vehicle rate and daily
+                          KM limit will update automatically in the quotation.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(150px, 1fr))",
+                        gap: "12px",
+                      }}
+                    >
+                      {selectedVehicleVariants.map((variant) => {
+                        const variantPackageDetails = getPackageDetails(
+                          selectedVehicle,
+                          variant,
+                        );
+                        const isActiveVariant =
+                          selectedVehicleVariantId === String(variant.id);
+
+                        return (
+                          <button
+                            key={variant.id}
+                            type="button"
+                            className={`qoSelectCard ${
+                              isActiveVariant ? "active" : ""
+                            }`}
+                            onClick={() => handleVariantSelect(variant)}
+                            style={{
+                              alignItems: "flex-start",
+                              textAlign: "left",
+                              padding: "18px 14px",
+                              borderRadius: "18px",
+                              minHeight: "205px",
+                            }}
+                          >
+                            <strong>{variant.label}</strong>
+
+                            <span
+                              style={{
+                                display: "block",
+                                marginTop: "10px",
+                                color: "#475569",
+                                fontWeight: 800,
+                              }}
+                            >
+                              {formatPrice(variant.pricePerDay)} / per day
+                            </span>
+
+                            {variant.leastSellingPricingPerDay && (
+                              <span
+                                style={{
+                                  display: "block",
+                                  marginTop: "5px",
+                                  color: "#64748b",
+                                  fontSize: "13px",
+                                }}
+                              ></span>
+                            )}
+
+                            <span
+                              style={{
+                                display: "grid",
+                                gap: "10px",
+                                marginTop: "14px",
+                                fontSize: "13px",
+                                lineHeight: 1.25,
+                                color: "#64748b",
+                              }}
+                            >
+                              <span>
+                                Daily KM Limit:
+                                <strong
+                                  style={{
+                                    display: "block",
+                                    color: "#334155",
+                                    fontSize: "14px",
+                                  }}
+                                >
+                                  {variantPackageDetails.kmLimit} km
+                                </strong>
+                              </span>
+
+                              {variantPackageDetails.extraKm && (
+                                <span>
+                                  Extra KM:
+                                  <strong
+                                    style={{
+                                      display: "block",
+                                      color: "#334155",
+                                      fontSize: "14px",
+                                    }}
+                                  >
+                                    {variantPackageDetails.extraKm}
+                                  </strong>
+                                </span>
+                              )}
+
+                              {variantPackageDetails.extraHour && (
+                                <span>
+                                  Extra Hour:
+                                  <strong
+                                    style={{
+                                      display: "block",
+                                      color: "#334155",
+                                      fontSize: "14px",
+                                    }}
+                                  >
+                                    {variantPackageDetails.extraHour}
+                                  </strong>
+                                </span>
+                              )}
+
+                              <span>
+                                Minimum:
+                                <strong
+                                  style={{
+                                    display: "block",
+                                    color: "#334155",
+                                    fontSize: "14px",
+                                  }}
+                                >
+                                  {variantPackageDetails.minimumDays} days
+                                </strong>
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </section>
 
           <section className="qoCard">
-            <h2>3. Client Details</h2>
+            <h2>
+              <span className="qoStepBadge">03</span> Client Information
+            </h2>
 
             <div className="qoInputGrid two">
               <label>
@@ -1738,7 +3052,9 @@ export default function RoadshowQO() {
           </section>
 
           <section className="qoCard">
-            <h2>4. Prepared By Details</h2>
+            <h2>
+              <span className="qoStepBadge">04</span> Prepared By & Signature
+            </h2>
 
             <div className="qoInputGrid two">
               <label>
@@ -1855,7 +3171,10 @@ export default function RoadshowQO() {
                         onPointerUp={handleSignatureCropPointerUp}
                         onPointerCancel={handleSignatureCropPointerUp}
                       >
-                        <img src={signatureSource} alt="Signature crop preview" />
+                        <img
+                          src={signatureSource}
+                          alt="Signature crop preview"
+                        />
 
                         <span
                           className="signatureCropBox"
@@ -1899,7 +3218,9 @@ export default function RoadshowQO() {
           </section>
 
           <section className="qoCard">
-            <h2>5. Region & Campaign</h2>
+            <h2>
+              <span className="qoStepBadge">05</span> Campaign Configuration
+            </h2>
 
             <div className="qoInputGrid two">
               <label>
@@ -1914,6 +3235,9 @@ export default function RoadshowQO() {
                   <option value="chennai">Chennai</option>
                   <option value="rotn">ROTN</option>
                   <option value="kerala">Kerala</option>
+                  <option value="andhara">Andhra</option>
+                  <option value="telungana">Telangana</option>
+                  <option value="karnataka">Karnataka</option>
                   <option value="otherStates">Other States</option>
                 </select>
               </label>
@@ -1921,34 +3245,45 @@ export default function RoadshowQO() {
               <label>
                 No. of Vehicles
                 <input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(event) => {
-                    clearSavedQuotation();
-                    setQuantity(clampNumber(event.target.value, 1));
-                  }}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={quantityInput}
+                  onChange={(event) => handleQuantityChange(event.target.value)}
+                  onBlur={handleQuantityBlur}
                 />
+                <small>Minimum vehicles: 1</small>
+                {quantityError && (
+                  <small style={{ color: "#dc2626", fontWeight: 700 }}>
+                    {quantityError}
+                  </small>
+                )}
               </label>
 
               <label>
                 No. of Days
                 <input
-                  type="number"
-                  min={minimumDays}
-                  value={days}
-                  onChange={(event) => {
-                    clearSavedQuotation();
-                    setDays(clampNumber(event.target.value, minimumDays));
-                  }}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={daysInput}
+                  onChange={(event) => handleDaysChange(event.target.value)}
+                  onBlur={handleDaysBlur}
                 />
+                <small>Minimum booking: {minimumDays} days</small>
+                {campaignDaysError && (
+                  <small style={{ color: "#dc2626", fontWeight: 700 }}>
+                    {campaignDaysError}
+                  </small>
+                )}
               </label>
 
               <label>
                 Up & Down Charge
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={pricingDetails.upDownCharge}
                   onChange={(event) =>
                     handlePricingChange("upDownCharge", event.target.value)
@@ -1959,25 +3294,60 @@ export default function RoadshowQO() {
               <label>
                 GST %
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={gstPercent}
-                  onChange={(event) => {
-                    clearSavedQuotation();
-                    setGstPercent(clampNumber(event.target.value, 0));
-                  }}
+                  onChange={(event) =>
+                    handleGstPercentChange(event.target.value)
+                  }
                 />
               </label>
+            </div>
+
+            <div
+              style={{
+                marginTop: "18px",
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+                gap: "12px",
+              }}
+            >
+              <div className="qoSelectCard" style={{ cursor: "default" }}>
+                <strong>Branding Cost</strong>
+                <span>
+                  {formatPrice(pricingDetails.brandingCost)} / vehicle
+                </span>
+                <small>{getRegionLabel(region)}</small>
+              </div>
+
+              <div className="qoSelectCard" style={{ cursor: "default" }}>
+                <strong>RTO Permission</strong>
+                <span>
+                  {formatPrice(pricingDetails.rtoPermission)} / 1 month /
+                  vehicle
+                </span>
+                <small>{getRegionLabel(region)}</small>
+              </div>
+
+              <div className="qoSelectCard" style={{ cursor: "default" }}>
+                <strong>Promoter Cost / Day</strong>
+                <span>{formatPrice(pricingDetails.promoterCost)} / day</span>
+                <small>{getRegionLabel(region)}</small>
+              </div>
             </div>
           </section>
 
           <section className="qoCard">
             <div className="qoSectionHeader">
               <div>
-                <h2>6. Pricing Customization</h2>
+                <h2>
+                  <span className="qoStepBadge">06</span> Commercial Pricing
+                </h2>
                 <p>
-                  Override any default price for this quotation. Changes here do
-                  not affect master pricing.
+                  Master prices are locked. Use the Least Selling Price input to
+                  reduce only the selected vehicle per-day rate within the
+                  allowed range.
                 </p>
               </div>
 
@@ -1992,19 +3362,53 @@ export default function RoadshowQO() {
 
             <div className="qoInputGrid two">
               <label>
+                Least Selling Price / Final Per Day Rate
+                <div className="moneyInput">
+                  <span>Rs.</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={leastSellingPriceInput}
+                    onChange={(event) =>
+                      handleLeastSellingPriceChange(event.target.value)
+                    }
+                    onBlur={handleLeastSellingPriceBlur}
+                  />
+                </div>
+                <small>
+                  Allowed: {formatPrice(selectedVehicleLeastSellingRate || 0)}{" "}
+                  to {formatPrice(selectedVehicleMaxRate || 0)}
+                </small>
+                {leastSellingPriceError && (
+                  <small style={{ color: "#dc2626", fontWeight: 700 }}>
+                    {leastSellingPriceError}
+                  </small>
+                )}
+              </label>
+
+              <label>
                 Per Day Vehicle Rate
                 <div className="moneyInput">
                   <span>Rs.</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={pricingDetails.vehicleRate}
-                    onChange={(event) =>
-                      handlePricingChange("vehicleRate", event.target.value)
-                    }
+                    readOnly
+                    disabled
                   />
                 </div>
                 <small>
-                  Default: {formatPrice(selectedVehicle?.pricePerDay || 0)}
+                  Master:{" "}
+                  {formatPrice(
+                    getDefaultPricing(
+                      selectedVehicle,
+                      region,
+                      selectedVehicleVariant,
+                    ).vehicleRate,
+                  )}
                 </small>
               </label>
 
@@ -2013,19 +3417,15 @@ export default function RoadshowQO() {
                 <div className="moneyInput">
                   <span>Rs.</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={pricingDetails.brandingCost}
-                    onChange={(event) =>
-                      handlePricingChange("brandingCost", event.target.value)
-                    }
+                    readOnly
+                    disabled
                   />
                 </div>
-                <small>
-                  Default:{" "}
-                  {formatPrice(
-                    getDefaultPricing(selectedVehicle, region).brandingCost,
-                  )}
-                </small>
+                <small>Auto-loaded from selected vehicle and region.</small>
               </label>
 
               <label>
@@ -2033,19 +3433,15 @@ export default function RoadshowQO() {
                 <div className="moneyInput">
                   <span>Rs.</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={pricingDetails.rtoPermission}
-                    onChange={(event) =>
-                      handlePricingChange("rtoPermission", event.target.value)
-                    }
+                    readOnly
+                    disabled
                   />
                 </div>
-                <small>
-                  Default:{" "}
-                  {formatPrice(
-                    getDefaultPricing(selectedVehicle, region).rtoPermission,
-                  )}
-                </small>
+                <small>Auto-loaded from selected vehicle and region.</small>
               </label>
 
               <label>
@@ -2053,19 +3449,15 @@ export default function RoadshowQO() {
                 <div className="moneyInput">
                   <span>Rs.</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={pricingDetails.promoterCost}
-                    onChange={(event) =>
-                      handlePricingChange("promoterCost", event.target.value)
-                    }
+                    readOnly
+                    disabled
                   />
                 </div>
-                <small>
-                  Default:{" "}
-                  {formatPrice(
-                    getDefaultPricing(selectedVehicle, region).promoterCost,
-                  )}
-                </small>
+                <small>Auto-loaded from selected vehicle and region.</small>
               </label>
 
               <label>
@@ -2073,39 +3465,15 @@ export default function RoadshowQO() {
                 <div className="moneyInput">
                   <span>Rs.</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={pricingDetails.ledCost}
-                    onChange={(event) =>
-                      handlePricingChange("ledCost", event.target.value)
-                    }
+                    readOnly
+                    disabled
                   />
                 </div>
-                <small>
-                  Default:{" "}
-                  {formatPrice(
-                    getDefaultPricing(selectedVehicle, region).ledCost,
-                  )}
-                </small>
-              </label>
-
-              <label>
-                55" LED TV / Day
-                <div className="moneyInput">
-                  <span>Rs.</span>
-                  <input
-                    type="number"
-                    value={pricingDetails.led55Cost}
-                    onChange={(event) =>
-                      handlePricingChange("led55Cost", event.target.value)
-                    }
-                  />
-                </div>
-                <small>
-                  Default:{" "}
-                  {formatPrice(
-                    getDefaultPricing(selectedVehicle, region).led55Cost,
-                  )}
-                </small>
+                <small>Fixed add-on rate.</small>
               </label>
 
               <label>
@@ -2113,39 +3481,83 @@ export default function RoadshowQO() {
                 <div className="moneyInput">
                   <span>Rs.</span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={pricingDetails.powerBackup}
-                    onChange={(event) =>
-                      handlePricingChange("powerBackup", event.target.value)
-                    }
+                    readOnly
+                    disabled
                   />
                 </div>
-                <small>
-                  Default:{" "}
-                  {formatPrice(
-                    getDefaultPricing(selectedVehicle, region).powerBackup,
-                  )}
-                </small>
+                <small>Fixed add-on rate.</small>
               </label>
+            </div>
+
+            <div className="qoDiscountSummary">
+              <div className="qoDiscountSummaryHeader">
+                <strong>Vehicle Rental Discount Summary</strong>
+                <span>
+                  Actual selling price minus final per-day rate entered by the
+                  user.
+                </span>
+              </div>
+
+              <div className="qoDiscountSummaryGrid">
+                <div>
+                  <span>Actual Per Day Rate</span>
+                  <strong>{formatPrice(vehicleActualRate)}</strong>
+                </div>
+
+                <div>
+                  <span>Discount / Day</span>
+                  <strong>{formatPrice(vehicleDiscountPerDay)}</strong>
+                </div>
+
+                <div>
+                  <span>Final Per Day Rate</span>
+                  <strong>{formatPrice(vehicleFinalRate)}</strong>
+                </div>
+
+                <div>
+                  <span>Actual Vehicle Amount</span>
+                  <strong>{formatPrice(vehicleActualAmount)}</strong>
+                </div>
+
+                <div className="discountHighlight">
+                  <span>Discount Amount</span>
+                  <strong>{formatPrice(vehicleDiscountAmount)}</strong>
+                </div>
+
+                <div className="finalHighlight">
+                  <span>Remaining Vehicle Amount</span>
+                  <strong>{formatPrice(vehicleRemainingAmount)}</strong>
+                </div>
+              </div>
             </div>
           </section>
 
           <section className="qoCard">
-            <h2>7. Add Ons</h2>
+            <h2>
+              <span className="qoStepBadge">07</span> Add-ons & Support
+            </h2>
 
-            <div className="qoAddonList">
-              <label className="qoAddon">
+            <div className="qoAddonList qoAddonCardList">
+              <label
+                className={`qoAddon qoAddonCard ${includePromoter ? "active" : ""}`}
+              >
                 <input
                   type="checkbox"
                   checked={includePromoter}
-                  onChange={(event) => {
-                    clearSavedQuotation();
-                    setIncludePromoter(event.target.checked);
-                  }}
+                  onChange={(event) =>
+                    handlePromoterToggle(event.target.checked)
+                  }
                 />
-                <span>
-                  Include Promoter ({formatPrice(pricingDetails.promoterCost)}
-                  /day)
+                <span className="qoAddonCardBody">
+                  <strong>Promoter Support</strong>
+                  <em>On-ground campaign promoters</em>
+                  <small>
+                    {formatPrice(pricingDetails.promoterCost)} / day
+                  </small>
                 </span>
               </label>
 
@@ -2154,68 +3566,64 @@ export default function RoadshowQO() {
                   <label>
                     No. of Promoters
                     <input
-                      type="number"
-                      min="1"
-                      value={promoterQuantity}
-                      onChange={(event) => {
-                        clearSavedQuotation();
-                        setPromoterQuantity(clampNumber(event.target.value, 1));
-                      }}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={promoterQuantityInput}
+                      onChange={(event) =>
+                        handlePromoterQuantityChange(event.target.value)
+                      }
+                      onBlur={handlePromoterQuantityBlur}
                     />
+                    <small>Default count: 1 promoter</small>
                   </label>
                 </div>
               )}
 
-              <label className="qoAddon">
+              <label
+                className={`qoAddon qoAddonCard ${includeLed ? "active" : ""}`}
+              >
                 <input
                   type="checkbox"
                   checked={includeLed}
                   onChange={(event) => handleLedToggle(event.target.checked)}
                 />
-                <span>
-                  Include 43" LED TV ({formatPrice(pricingDetails.ledCost)}
-                  /day)
+                <span className="qoAddonCardBody">
+                  <strong>43" LED TV</strong>
+                  <em>High-impact campaign display</em>
+                  <small>{formatPrice(pricingDetails.ledCost)} / day</small>
                 </span>
               </label>
 
-              <label className="qoAddon">
+              <label
+                className={`qoAddon qoAddonCard ${includePowerBackup ? "active" : ""} ${includeLed ? "locked" : ""}`}
+              >
                 <input
                   type="checkbox"
-                  checked={includeLed55}
-                  onChange={(event) => handleLed55Toggle(event.target.checked)}
-                />
-                <span>
-                  Include 55" LED TV ({formatPrice(pricingDetails.led55Cost)}
-                  /day)
-                </span>
-              </label>
-
-              <label className={`qoAddon ${includeLed55 ? "locked" : ""}`}>
-                <input
-                  type="checkbox"
-                  checked={includePowerBackup || includeLed55}
-                  disabled={includeLed55}
+                  checked={includePowerBackup}
+                  disabled={includeLed}
                   onChange={(event) =>
                     handlePowerBackupToggle(event.target.checked)
                   }
                 />
-                <span>
-                  Include Power Backup (
-                  {formatPrice(
-                    pricingDetails.powerBackup || POWER_BACKUP_ADDON_RATE_PER_DAY,
-                  )}
-                  /day)
-                  {includeLed55 ? " — mandatory with 55\" LED TV" : ""}
+                <span className="qoAddonCardBody">
+                  <strong>Power Backup</strong>
+                  <em>
+                    {includeLed
+                      ? 'Mandatory with 43" LED TV'
+                      : "Generator for continuous run"}
+                  </em>
+                  <small>
+                    {formatPrice(
+                      pricingDetails.powerBackup ||
+                        POWER_BACKUP_ADDON_RATE_PER_DAY,
+                    )}{" "}
+                    / day
+                  </small>
                 </span>
               </label>
 
-              {includeLed55 && (
-                <p className="qoAddonNote">
-                  55&quot; LED TV needs stable power, so Power Backup is
-                  automatically enabled and shown as a separate quotation line
-                  item.
-                </p>
-              )}
+              {addOnMessage && <p className="qoAddonNote">{addOnMessage}</p>}
             </div>
 
             <button
@@ -2232,20 +3640,22 @@ export default function RoadshowQO() {
           <div
             className={`proposalBook printableArea ${
               isCompactProposal ? "denseQuoteBook" : ""
-            } ${
-              uploadedSignature ? "hasSignatureQuote" : "noSignatureQuote"
-            }`}
+            } ${uploadedSignature ? "hasSignatureQuote" : "noSignatureQuote"}`}
           >
             <section className="proposalDocument pdfPage quotePageOne">
               <header className="quoteTopBar">
                 <div className="quoteBrandBlock">
                   <div className="quoteLogoBox">
-                    <img src={displayLogo} alt="Adinn logo" />
+                    <img
+                      className="quoteLogoImage"
+                      src={renderLogoSrc}
+                      alt="Adinn logo"
+                    />
                   </div>
 
-                  <div>
-                    <p className="quoteCompanyName">{COMPANY_DETAILS.name}</p>
-                    <h1>{COMPANY_DETAILS.title}</h1>
+                  <div className="quoteBrandText">
+                    {/* <p className="quoteCompanyName">{COMPANY_DETAILS.name}</p> */}
+                    <p className="quoteEyebrow">{COMPANY_DETAILS.title}</p>
                   </div>
                 </div>
 
@@ -2269,7 +3679,7 @@ export default function RoadshowQO() {
 
               <section className="quotePartyGrid">
                 <div className="quotePartyCard">
-                  <p>Quotation To</p>
+                  <p>Prepared For</p>
                   <h2>{clientDetails.companyName || "-"}</h2>
                   <span>{clientDetails.clientName || "-"}</span>
                   <span>{clientDetails.contactNumber || "-"}</span>
@@ -2288,8 +3698,10 @@ export default function RoadshowQO() {
 
               <section className="quoteCampaignCard">
                 <div className="quoteSectionTitle">
-                  <span>Campaign Details</span>
-                  <strong>{selectedVehicle?.name || "Selected Vehicle"}</strong>
+                  <span>Campaign Snapshot</span>
+                  <strong>
+                    Selected Campaign Vehicle · {selectedVehicleDisplayName}
+                  </strong>
                 </div>
 
                 <div className="quoteInfoGrid">
@@ -2301,11 +3713,6 @@ export default function RoadshowQO() {
                   <div>
                     <span>Location</span>
                     <strong>{clientDetails.campaignLocation || "-"}</strong>
-                  </div>
-
-                  <div>
-                    <span>Region</span>
-                    <strong>{getRegionLabel(region)}</strong>
                   </div>
 
                   <div>
@@ -2324,8 +3731,13 @@ export default function RoadshowQO() {
                   </div>
 
                   <div>
-                    <span>Minimum Booking</span>
-                    <strong>{minimumDays} days</strong>
+                    <span>Extra KM</span>
+                    <strong>{selectedPackageDetails.extraKm || "-"}</strong>
+                  </div>
+
+                  <div>
+                    <span>Extra Hour</span>
+                    <strong>{selectedPackageDetails.extraHour || "-"}</strong>
                   </div>
 
                   <div>
@@ -2340,17 +3752,14 @@ export default function RoadshowQO() {
                   <div>
                     <span>Commercial Quotation</span>
                     <p>
-                      {includeLed55
-                        ? `55" LED TV requires power backup. Power Backup is added automatically at ${formatPrice(
-                            pricingDetails.powerBackup ||
-                              POWER_BACKUP_ADDON_RATE_PER_DAY,
-                          )} / day and included in the total.`
-                        : "All values are in INR. Final booking is subject to vehicle availability."}
+                      {
+                        "All values are in INR. Final booking is subject to vehicle availability."
+                      }
                     </p>
                   </div>
 
                   <div className="quoteGrandBadge">
-                    <span style={{ color: "white" }}>Grand Total</span>
+                    <span style={{ color: "white" }}>Campaign Investment</span>
                     <strong>{formatPrice(grandTotal)}</strong>
                   </div>
                 </div>
@@ -2380,18 +3789,54 @@ export default function RoadshowQO() {
                             <p className="quoteParticularDescription">
                               {item.description}
                             </p>
+
+                            {item.discountAmount && item.discountAmount > 0 && (
+                              <div className="quoteDiscountPills"></div>
+                            )}
                           </div>
                         </td>
 
-                        <td>{item.rateLabel}</td>
+                        <td>
+                          {item.discountAmount && item.discountAmount > 0 ? (
+                            <div className="quoteRateBreakdown">
+                              <span>
+                                {formatPrice(item.actualRate || 0)} / day
+                              </span>
+                            </div>
+                          ) : (
+                            item.rateLabel
+                          )}
+                        </td>
                         <td>{item.periodLabel}</td>
                         <td>{item.quantityLabel}</td>
-                        <td>{formatPrice(item.amount)}</td>
+                        <td>
+                          {item.discountAmount && item.discountAmount > 0 ? (
+                            <div className="quoteAmountBreakdown">
+                              <span>{formatPrice(item.actualAmount || 0)}</span>
+                            </div>
+                          ) : (
+                            formatPrice(item.amount)
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
 
                   <tfoot>
+                    {totalDiscountAmount > 0 && (
+                      <>
+                        <tr className="quotationActualRow">
+                          <td colSpan={5}>Actual Total</td>
+                          <td>{formatPrice(actualSubtotal)}</td>
+                        </tr>
+
+                        <tr className="quotationDiscountRow">
+                          <td colSpan={5}>Discount Amount</td>
+                          <td>- {formatPrice(totalDiscountAmount)}</td>
+                        </tr>
+                      </>
+                    )}
+
                     <tr>
                       <td colSpan={5}>Subtotal</td>
                       <td>{formatPrice(subtotal)}</td>
@@ -2414,13 +3859,43 @@ export default function RoadshowQO() {
             </section>
 
             <section className="proposalDocument pdfPage quotePageTwo">
+              <header className="quoteTopBar quoteTopBarSlim">
+                <div className="quoteBrandBlock">
+                  <div className="quoteLogoBox">
+                    <img
+                      className="quoteLogoImage"
+                      src={renderLogoSrc}
+                      alt="Adinn logo"
+                    />
+                  </div>
+                  <div className="quoteBrandText">
+                    <p className="quoteCompanyName">{COMPANY_DETAILS.name}</p>
+                    <p className="quoteEyebrow">BOOKING TERMS & CONFIRMATION</p>
+                    {/* <h1>Proposal · {proposalNumber}</h1> */}
+                  </div>
+                </div>
+                <div className="quoteMetaBox">
+                   <div>
+                     <span>Quotation No.</span>
+                    <strong>{proposalNumber}</strong>
+                  </div>
+                  <div>
+                    <span>Prepared For</span>
+                    <strong>{clientDetails.companyName || "-"}</strong>
+                  </div>
+                  <div>
+                    <span>Valid Until</span>
+                    <strong>{formatDate(validUntilDate)}</strong>
+                  </div>
+                </div>
+              </header>
+
               <section className="quoteTermsPanel">
                 <div className="quoteTermsHeader">
                   <div>
-                    <span>Booking Assurance</span>
+                    <span>Booking Terms</span>
                     <h3>Terms & Conditions</h3>
                   </div>
-
                   <strong>Subject to availability</strong>
                 </div>
 
@@ -2429,12 +3904,44 @@ export default function RoadshowQO() {
                     className="quoteTermsTimeline"
                     aria-label="Terms and conditions"
                   >
-                    {TERMS_AND_CONDITIONS.map((term) => (
+                    {TERMS_AND_CONDITIONS.map((term, index) => (
                       <li key={term}>
-                        <span className="quoteTermDot" aria-hidden="true" />
+                        <span className="quoteTermNumber" aria-hidden="true">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
                         <p>{term}</p>
                       </li>
                     ))}
+                  </ol>
+                </div>
+              </section>
+
+              <section className="quoteInfoTwoCol" style={{ display: "none" }}>
+                <div className="quoteInfoPanel">
+                  <span className="quoteInfoEyebrow">
+                    What this quotation covers
+                  </span>
+                  <ul>
+                    <li>
+                      Branded campaign vehicle for the selected duration &
+                      region.
+                    </li>
+                    <li>Branding production and application support.</li>
+                    <li>RTO permission for the campaign window.</li>
+                    <li>
+                      Selected optional add-ons listed in the commercial table.
+                    </li>
+                  </ul>
+                </div>
+                <div className="quoteInfoPanel">
+                  <span className="quoteInfoEyebrow">Next Steps</span>
+                  <ol>
+                    <li>
+                      Confirm the quotation in writing within{" "}
+                      {COMPANY_DETAILS.validityDays} days.
+                    </li>
+                    <li>Share branding artwork.</li>
+                    <li>Adinn team schedules deployment & shares tracking.</li>
                   </ol>
                 </div>
               </section>
@@ -2463,7 +3970,8 @@ export default function RoadshowQO() {
                     </div>
 
                     <span>
-                      For {preparedByDetails.companyName || COMPANY_DETAILS.name}
+                      For{" "}
+                      {preparedByDetails.companyName || COMPANY_DETAILS.name}
                     </span>
 
                     <strong>Authorised Signatory</strong>
@@ -2479,4 +3987,3 @@ export default function RoadshowQO() {
     </div>
   );
 }
-

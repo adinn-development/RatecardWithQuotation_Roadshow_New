@@ -5,16 +5,13 @@
     "type": "Standard Flex / Mobile Van",
     "name": "Tata Ace 8 Feet Vehicle",
     "shortDescription": "Compact, economical vehicle for flexible city roadshows and local area visibility.",
-    "pricePerDay": 3500,
+    "pricePerDay": 3000,
     "packageTotal": "",
     "highlight": "Choose the Flex model that best fits your market activation",
     "images": [
       "/images/tata-ace-8ft-flex-1.png",
       "/images/tata-ace-8ft-flex-2.png",
       "/images/tata-ace-8ft-flex-3.png",
-      "/images/tata-ace-8ft-flex-4.png",
-      "/images/tata-ace-8ft-flex-4.png",
-      "/images/tata-ace-8ft-flex-4.png",
       "/images/tata-ace-8ft-flex-4.png"
     ],
     "quickSpecs": [
@@ -24,13 +21,18 @@
       },
       {
         "label": "Extra KM",
-        "value": "Rs. 12/km"
+        "value": "₹12 / km"
       },
       {
         "label": "Minimum",
-        "value": "10 days"
+        "value": "7 days"
+      },
+      {
+        "label": "Extra Hours",
+        "value": "₹750 / Hour"
       }
     ],
+    "leastSellingPrice" : [2500],
     "included": [
       "Vehicle rent",
       "Driver bata, food & accommodation",
@@ -47,24 +49,26 @@
     "locationCharges": [
       {
         "label": "Branding cost",
-        "chennai": "10000",
-        "rotn": "10000",
-        "kerala": "12500",
-        "otherStates": "10000"
+        "TamilNadu": "₹8,500",
+        "kerala": "₹10,000",
+        "RoTN": "₹8,500"
+        
       },
       {
         "label": "RTO Permission",
-        "chennai": "7500",
-        "rotn": "5000",
-        "kerala": "22000",
-        "otherStates": "15000"
+        "chennai": "₹7,500",
+        "RoTN": "₹5,000",
+        "kerala": "₹22,500",
+        "Andhra Pradesh" : "₹10,000",
+        "Telangana" : "₹10,000",
+        "Karnataka" : "₹10,000"
+      
       },
       {
         "label": "Promoter",
-        "chennai": "1300",
-        "rotn": "1300",
-        "kerala": "1850",
-        "otherStates": "1700"
+        "TamilNadu": "₹1,300",
+        "RoTN": "₹1,700",
+        "kerala": "₹1,850"
       }
     ]
   },
