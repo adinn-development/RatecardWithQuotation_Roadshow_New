@@ -73,11 +73,37 @@ const formatDisplayDate = (value?: string) => {
   });
 };
 
+const formatDisplayDateTime = (value?: string) => {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return value;
+
+  const datePart = date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Kolkata",
+  });
+
+  const timePart = date
+    .toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Kolkata",
+    })
+    .toLowerCase();
+
+  return `${datePart} / ${timePart}`;
+};
+
 const getStaffDisplay = (item: RoadshowQuotationItem) => {
   const staffName = item.preparedByDetails?.staffName || "-";
   const staffPhone = item.preparedByDetails?.staffPhone || "-";
 
-  return `${staffName}/${staffPhone}`;
+  return `${staffName}/+91 ${staffPhone}`;
 };
 
 const getCompanyCampaignDisplay = (item: RoadshowQuotationItem) => {
@@ -258,7 +284,7 @@ export default function RoadshowQuotationList() {
           <table className="quotationListTable">
             <thead>
               <tr>
-                <th>Created Date</th>
+                <th>Created Date & Time</th>
                 <th>Created Staff</th>
                 <th>Company / Campaign</th>
                 <th>PDF Download Link</th>
@@ -280,7 +306,7 @@ export default function RoadshowQuotationList() {
                     <tr key={item._id}>
                       <td>
                         <div className="dateCell">
-                          <strong>{formatDisplayDate(item.createdAt)}</strong>
+                          <strong>{formatDisplayDateTime(item.createdAt)}</strong>
                           <span>{item.quotationNumber || "-"}</span>
                         </div>
                       </td>
@@ -295,7 +321,7 @@ export default function RoadshowQuotationList() {
                           <span>
                             {item.clientDetails?.clientName || "-"}
                             {item.clientDetails?.contactNumber
-                              ? ` / ${item.clientDetails.contactNumber}`
+                              ? ` /+91 ${item.clientDetails.contactNumber}`
                               : ""}
                           </span>
                         </div>
