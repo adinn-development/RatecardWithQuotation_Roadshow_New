@@ -3161,8 +3161,7 @@ export default function RoadshowQO() {
             </div>
 
             <div>
-              <h1>Roadshow Quotation Studio</h1>
-              <p>ADINN · Premium Outdoor Campaign Proposals</p>
+              <h1>Roadshow Quotation Master</h1>
             </div>
           </div>
 
@@ -3225,7 +3224,7 @@ export default function RoadshowQO() {
                     <strong>{category}</strong>
                     <span>
                       {category === "Flex Branding"
-                        ? "Traditional flex-branded vehicles."
+                        ? "Traditional flex-branding vehicles."
                         : category === "Hybrid LED + Flex"
                           ? "LED screen with flex branding."
                           : "High-impact full LED vehicles."}
@@ -3626,6 +3625,7 @@ export default function RoadshowQO() {
                   onChange={(event) =>
                     handlePreparedByChange("companyName", event.target.value)
                   }
+                  readOnly
                 />
               </label>
 
@@ -3637,6 +3637,7 @@ export default function RoadshowQO() {
                   onChange={(event) =>
                     handlePreparedByChange("gstNumber", event.target.value)
                   }
+                  readOnly
                 />
               </label>
 
@@ -3681,6 +3682,7 @@ export default function RoadshowQO() {
                   onChange={(event) =>
                     handlePreparedByChange("address", event.target.value)
                   }
+                  readOnly
                 />
               </label>
 
@@ -4379,7 +4381,7 @@ export default function RoadshowQO() {
                 </div>
 
                 <div className="quotePartyCard quoteQuotationMetaCard">
-                  <p>QUOTE CONTACT</p>
+                  <p>QUOTE & CONTACT</p>
                   <div className="quoteMetaList">
                     <div>
                       <span>Date</span>
