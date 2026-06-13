@@ -1,0 +1,936 @@
+/* Append these styles to src/pages/RoadshowQuotationList.css */
+
+.quotationSuccess {
+  margin-top: 14px;
+  padding: 13px 15px;
+  border-radius: 12px;
+  border: 1px solid rgba(22, 163, 74, 0.22);
+  background: rgba(22, 163, 74, 0.08);
+  color: #166534;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.quotationStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 116px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.quotationStatusBadge.waiting {
+  background: rgba(234, 179, 8, 0.13);
+  color: #92400e;
+  border: 1px solid rgba(234, 179, 8, 0.26);
+}
+
+.quotationStatusBadge.approved {
+  background: rgba(22, 163, 74, 0.12);
+  color: #166534;
+  border: 1px solid rgba(22, 163, 74, 0.24);
+}
+
+.quotationStatusBadge.uploaded,
+.quotationStatusBadge.saved {
+  background: rgba(15, 23, 42, 0.07);
+  color: #334155;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.quotationStatusBadge.failed {
+  background: rgba(220, 38, 38, 0.10);
+  color: #991b1b;
+  border: 1px solid rgba(220, 38, 38, 0.22);
+}
+
+.approveBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 15px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: 0 12px 24px -16px rgba(15, 23, 42, 0.55);
+}
+
+.approveBtn:hover {
+  background: #1f2937;
+}
+
+.approveBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.noActionText {
+  color: #94a3b8;
+  font-weight: 800;
+}
+
+.quotationInlineLinkButton {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.quotationInlineLinkButton:hover {
+  text-decoration: underline;
+}
+
+.approvalModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.38);
+}
+
+.approvalModal {
+  width: min(440px, calc(100vw - 32px));
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  box-shadow: 0 28px 80px -30px rgba(15, 23, 42, 0.55);
+}
+
+.approvalModalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.approvalModalHeader p {
+  margin: 0 0 4px;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.approvalModalHeader h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.approvalModalHeader button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.approvalModal label {
+  display: grid;
+  gap: 8px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.approvalModal input {
+  height: 46px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  padding: 0 14px;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
+  outline: none;
+}
+
+.approvalModal input:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.10);
+}
+
+.approvalModalError {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  color: #991b1b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.approvalModalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.approvalModalActions > button:first-child {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 999px;
+  padding: 9px 15px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+/* =========================================================
+   Protected quotation preview modal
+   This replaces the pre-approval PDF iframe/canvas view.
+   It renders database quotation details in a PDF-like UI.
+   ========================================================= */
+
+.approvalQuotePreviewBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.66);
+}
+
+.approvalQuotePreviewShell {
+  width: min(1160px, calc(100vw - 24px));
+  height: min(94vh, 940px);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 34px 100px -30px rgba(0, 0, 0, 0.72);
+}
+
+.approvalQuotePreviewTopbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 18px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.10);
+}
+
+.approvalQuotePreviewTopbar p {
+  margin: 0 0 4px;
+  color: #b91c1c;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.approvalQuotePreviewTopbar h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 22px;
+  line-height: 1.1;
+  font-weight: 900;
+}
+
+.approvalQuotePreviewTopbar span {
+  display: block;
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.approvalQuotePreviewTopbar button {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 25px;
+  line-height: 1;
+  font-weight: 500;
+  box-shadow: 0 6px 18px -14px rgba(15, 23, 42, 0.65);
+}
+
+.approvalQuotePreviewTopbar button:hover {
+  border-color: rgba(220, 38, 38, 0.25);
+  color: #b91c1c;
+}
+
+.approvalQuotePreviewBody {
+  overflow: auto;
+  padding: 28px;
+  background:
+    radial-gradient(900px 420px at 0% 0%, rgba(220, 38, 38, 0.05), transparent 62%),
+    #e5e7eb;
+}
+
+.approvalPreviewState {
+  max-width: 520px;
+  margin: 160px auto;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #334155;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 900;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+}
+
+.approvalPreviewState.error {
+  color: #991b1b;
+  background: #fef2f2;
+  border-color: rgba(220, 38, 38, 0.22);
+}
+
+.approvalPdfLikeBook {
+  display: grid;
+  gap: 24px;
+  justify-items: center;
+  font-family: "Manrope", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  color: #111827;
+  user-select: none;
+}
+
+.approvalPdfLikePage {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 7mm;
+  padding: 14mm 14mm 15mm;
+  overflow: hidden;
+  border-radius: 7px;
+  background: #ffffff;
+  box-shadow: 0 28px 70px -38px rgba(15, 23, 42, 0.55);
+}
+
+.approvalPreviewRibbon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3mm 4mm;
+  border-radius: 3mm;
+  background: rgba(185, 28, 28, 0.045);
+  border: 1px solid rgba(185, 28, 28, 0.12);
+}
+
+.approvalPreviewRibbon > span {
+  color: #b91c1c;
+  font-size: 8.6px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.approvalQuoteHeaderCard {
+  display: grid;
+  grid-template-columns: 44mm 1fr;
+  align-items: center;
+  gap: 7mm;
+  padding: 7mm 8mm;
+  border-radius: 5mm;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+}
+
+.approvalQuoteLogoBox {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 24mm;
+}
+
+.approvalQuoteLogoBox img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 44mm;
+  max-height: 23mm;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.approvalQuoteCompanyBlock {
+  display: grid;
+  gap: 1.7mm;
+  padding-left: 7mm;
+  border-left: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.approvalQuoteCompanyBlock h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 18px;
+  line-height: 1.13;
+  font-weight: 900;
+  letter-spacing: -0.018em;
+}
+
+.approvalQuoteCompanyBlock strong {
+  color: #111827;
+  font-size: 11.5px;
+  line-height: 1.18;
+  font-weight: 900;
+}
+
+.approvalQuoteCompanyBlock p {
+  margin: 0;
+  max-width: 126mm;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 800;
+}
+
+.approvalQuotePartyGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5mm;
+}
+
+.approvalQuotePartyCard,
+.approvalQuoteMetaCard {
+  min-height: 43mm;
+  padding: 5mm 6mm;
+  border-radius: 4mm;
+  background: #fbfaf7;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+}
+
+.approvalQuotePartyCard {
+  display: flex;
+  flex-direction: column;
+  gap: 2.1mm;
+}
+
+.approvalQuotePartyCard p,
+.approvalQuoteMetaCard p {
+  margin: 0 0 1.5mm;
+  color: #b91c1c;
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.approvalQuotePartyCard h2 {
+  margin: 0 0 0.4mm;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.approvalQuotePartyCard span {
+  color: #475569;
+  font-size: 10.5px;
+  line-height: 1.32;
+  font-weight: 800;
+}
+
+.approvalQuoteMetaCard {
+  display: grid;
+  gap: 0;
+}
+
+.approvalQuoteMetaCard div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+  min-height: 7.2mm;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.10);
+}
+
+.approvalQuoteMetaCard div:last-child {
+  border-bottom: 0;
+}
+
+.approvalQuoteMetaCard span {
+  color: #64748b;
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.approvalQuoteMetaCard strong {
+  color: #111827;
+  text-align: right;
+  font-size: 10.5px;
+  line-height: 1.2;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.approvalCampaignCard {
+  padding: 5mm 6mm 6mm;
+  border-radius: 4mm;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+}
+
+.approvalSectionTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 4mm;
+  margin-bottom: 4mm;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.10);
+}
+
+.approvalSectionTitle span,
+.approvalQuoteTableHead span,
+.approvalTermsHeader span,
+.approvalInfoTwoCol span {
+  color: #64748b;
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.approvalSectionTitle strong {
+  color: #111827;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.approvalCampaignGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4mm 5mm;
+}
+
+.approvalCampaignGrid > div {
+  display: grid;
+  gap: 1mm;
+  padding-left: 8px;
+  border-left: 2px solid #dc2626;
+}
+
+.approvalCampaignGrid span {
+  color: #64748b;
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.approvalCampaignGrid strong {
+  color: #111827;
+  font-size: 11px;
+  line-height: 1.25;
+  font-weight: 900;
+}
+
+.approvalQuoteTableCard {
+  border-radius: 4mm;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.approvalQuoteTableHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 5mm 6mm;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.10);
+}
+
+.approvalQuoteTableHead p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.42;
+  font-weight: 700;
+}
+
+.approvalGrandBadge {
+  min-width: 48mm;
+  display: grid;
+  justify-items: end;
+  gap: 1mm;
+  padding: 4mm 5mm;
+  border-radius: 3mm;
+  background: #111827;
+  color: #ffffff;
+}
+
+.approvalGrandBadge span {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 8.2px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.approvalGrandBadge strong {
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.approvalQuotationTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+.approvalQuotationTable thead th {
+  padding: 8px 10px;
+  text-align: left;
+  color: #64748b;
+  background: #f8fafc;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.10);
+  font-size: 8.2px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.approvalQuotationTable thead th:last-child,
+.approvalQuotationTable tbody td:last-child,
+.approvalQuotationTable tfoot td:last-child {
+  text-align: right;
+}
+
+.approvalQuotationTable tbody td {
+  padding: 9px 10px;
+  color: #334155;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.approvalParticularBlock {
+  display: grid;
+  gap: 2px;
+}
+
+.approvalParticularBlock strong {
+  color: #111827;
+  font-size: 10.5px;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.approvalParticularBlock p {
+  margin: 0;
+  color: #64748b;
+  font-size: 9.2px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.approvalDiscountPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.approvalDiscountPills span {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.09);
+  color: #475569;
+  font-size: 7.5px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.approvalRateBreakdown,
+.approvalAmountBreakdown {
+  display: grid;
+  gap: 3px;
+  min-width: 22mm;
+}
+
+.approvalRateBreakdown span,
+.approvalAmountBreakdown span {
+  display: grid;
+  gap: 1px;
+}
+
+.approvalRateBreakdown em,
+.approvalAmountBreakdown em {
+  color: #94a3b8;
+  font-style: normal;
+  font-size: 7px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.approvalRateBreakdown strong,
+.approvalAmountBreakdown strong {
+  color: #111827;
+  font-size: 8.8px;
+  line-height: 1.2;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.approvalRateBreakdown .discountLine strong,
+.approvalAmountBreakdown .discountLine strong,
+.approvalDiscountRow td:last-child {
+  color: #dc2626;
+}
+
+.approvalQuotationTable tfoot td {
+  padding: 8px 10px;
+  color: #334155;
+  background: #ffffff;
+  border-top: 1px solid rgba(15, 23, 42, 0.10);
+  font-weight: 900;
+}
+
+.approvalGrandRow td {
+  background: #111827 !important;
+  color: #ffffff !important;
+  font-size: 12px;
+}
+
+.approvalEmptyCell {
+  text-align: center !important;
+  color: #94a3b8 !important;
+  font-weight: 800;
+}
+
+.approvalQuoteFooter {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 5mm;
+  padding-top: 5mm;
+  border-top: 1px solid rgba(15, 23, 42, 0.10);
+}
+
+.approvalQuoteFooter div {
+  display: grid;
+  gap: 1mm;
+}
+
+.approvalQuoteFooter div:last-child {
+  text-align: right;
+}
+
+.approvalQuoteFooter span {
+  color: #111827;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.approvalQuoteFooter strong {
+  color: #64748b;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.approvalMiniHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8mm;
+  padding-bottom: 5mm;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.10);
+}
+
+.approvalMiniHeader img {
+  max-width: 33mm;
+  max-height: 18mm;
+  object-fit: contain;
+}
+
+.approvalMiniHeader div {
+  display: grid;
+  justify-items: end;
+  gap: 1mm;
+}
+
+.approvalMiniHeader strong {
+  color: #111827;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.approvalMiniHeader span {
+  color: #b91c1c;
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.approvalTermsPanel {
+  border-radius: 4mm;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.approvalTermsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 5mm 6mm;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.10);
+}
+
+.approvalTermsHeader h3 {
+  margin: 2px 0 0;
+  color: #111827;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.approvalTermsHeader strong {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(220, 38, 38, 0.07);
+  border: 1px solid rgba(220, 38, 38, 0.14);
+  color: #b91c1c;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.approvalTermsList {
+  list-style: none;
+  margin: 0;
+  padding: 5mm 6mm 6mm;
+  display: grid;
+  gap: 10px;
+}
+
+.approvalTermsList li {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fbfaf7;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+}
+
+.approvalTermsList span {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: #111827;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.approvalTermsList p {
+  margin: 0;
+  color: #334155;
+  font-size: 10px;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+.approvalInfoTwoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5mm;
+}
+
+.approvalInfoTwoCol > div {
+  padding: 5mm 6mm;
+  border-radius: 4mm;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  background: #ffffff;
+}
+
+.approvalInfoTwoCol ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.approvalInfoTwoCol li {
+  color: #334155;
+  font-size: 10.3px;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.denseQuoteBook .approvalPdfLikePage {
+  gap: 5.5mm;
+  padding-top: 12mm;
+  padding-bottom: 12mm;
+}
+
+.denseQuoteBook .approvalQuotationTable tbody td {
+  padding: 6px 9px;
+}
+
+@media (max-width: 980px) {
+  .approvalQuotePreviewBackdrop {
+    padding: 0;
+  }
+
+  .approvalQuotePreviewShell {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  .approvalQuotePreviewBody {
+    padding: 18px 10px;
+  }
+
+  .approvalPdfLikePage {
+    transform: scale(0.64);
+    transform-origin: top center;
+    margin-bottom: -104mm;
+  }
+}

@@ -6,7 +6,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./RoadshowQO.css";
 import "./RoadshowQOWatermark.css";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 const LOGO_SRC = "/adinn-logo.png";
 
 const VEHICLES_JSON_URL =
@@ -23,7 +23,7 @@ const CATEGORY_ORDER = ["Flex Branding", "Hybrid LED + Flex", "LED Vehicles"];
 
 const LED_TV_ADDON_RATE_PER_DAY = 350;
 const POWER_BACKUP_ADDON_RATE_PER_DAY = 650;
-const RTO_PERMISSION_VALIDITY_DAYS = 31;
+const RTO_PERMISSION_VALIDITY_DAYS = 30;
 
 const ENABLE_DIGITAL_SIGNATURE = false; // set true to show and use the digital signature upload/crop/signatory flow
 const ENABLE_QUOTATION_WATERMARK = false; // set false to hide the logo watermark in preview, print, and generated PDF
@@ -711,7 +711,14 @@ const getRegionLabel = (region: RegionKey) => {
 };
 
 const getRtoBillingMonths = (campaignDays: number) => {
-  return Math.max(1, Math.ceil(campaignDays / RTO_PERMISSION_VALIDITY_DAYS));
+  const safeCampaignDays = Math.max(Number(campaignDays) || 0, 0);
+
+  // ADINN approval logic: 30 days = 1 billing month.
+  // Examples: 29 days => 1 month, 63/65 days => 2 months.
+  return Math.max(
+    1,
+    Math.floor(safeCampaignDays / RTO_PERMISSION_VALIDITY_DAYS),
+  );
 };
 
 const waitForImagesToLoad = async (selector: string) => {
@@ -1115,6 +1122,7 @@ const getPrefilledDiscountAmount = () =>
     : 0;
 
 export default function RoadshowQO() {
+  const navigate = useNavigate();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
   const [vehiclesError, setVehiclesError] = useState("");
@@ -1170,6 +1178,12 @@ export default function RoadshowQO() {
   const [leastSellingPriceInput, setLeastSellingPriceInput] = useState("");
   const [leastSellingPriceError, setLeastSellingPriceError] = useState("");
   const [vehicleDiscountAmount, setVehicleDiscountAmount] = useState(0);
+  const [brandingCostDiscount, setBrandingCostDiscount] = useState(0);
+  const [brandingCostDiscountInput, setBrandingCostDiscountInput] =
+    useState("0");
+  const [rtoPermissionDiscount, setRtoPermissionDiscount] = useState(0);
+  const [rtoPermissionDiscountInput, setRtoPermissionDiscountInput] =
+    useState("0");
   const [quantityError, setQuantityError] = useState("");
   const [campaignDaysError, setCampaignDaysError] = useState("");
   const [promoterDaysError, setPromoterDaysError] = useState("");
@@ -1191,6 +1205,8 @@ export default function RoadshowQO() {
   const [signatureCropMessage, setSignatureCropMessage] = useState("");
   const [isPdfMode, setIsPdfMode] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
+  const [approvalToastMessage, setApprovalToastMessage] = useState("");
   const [pdfError, setPdfError] = useState("");
   const [nextQuotationMeta, setNextQuotationMeta] = useState<{
     quotationDate: string;
@@ -1209,7 +1225,9 @@ export default function RoadshowQO() {
 
   const [proposalDate, setProposalDate] = useState(() => new Date());
 
+  const topMessageRef = useRef<HTMLDivElement | null>(null);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const approvalRedirectTimeoutRef = useRef<number | null>(null);
   const signatureInputRef = useRef<HTMLInputElement | null>(null);
   const signatureCropImageFrameRef = useRef<HTMLDivElement | null>(null);
   const signatureCropStartRef = useRef<Pick<CropSelection, "x" | "y"> | null>(
@@ -1218,6 +1236,28 @@ export default function RoadshowQO() {
 
   const displayLogo = uploadedLogo || LOGO_SRC;
   const renderLogoSrc = pdfLogoSrc || displayLogo;
+
+  const scrollToTopMessage = () => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        if (topMessageRef.current) {
+          topMessageRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+          topMessageRef.current.focus({ preventScroll: true });
+          return;
+        }
+
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    });
+  };
+
+  const showTopMessage = (message: string) => {
+    setPdfError(message);
+    scrollToTopMessage();
+  };
 
   const fetchNextQuotationNumber = async () => {
     try {
@@ -1235,6 +1275,14 @@ export default function RoadshowQO() {
 
   useEffect(() => {
     fetchNextQuotationNumber();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (approvalRedirectTimeoutRef.current) {
+        window.clearTimeout(approvalRedirectTimeoutRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -1375,6 +1423,8 @@ export default function RoadshowQO() {
     "LED Vehicles",
   ].includes(selectedCategory);
   const canEditRtoPermission = region === "otherStates";
+  const canShowBrandingCostDiscount = selectedCategory !== "LED Vehicles";
+  const canShowRtoPermissionDiscount = Number(pricingDetails.rtoPermission || 0) !== 0;
   const otherStateNameLabel = otherStateName.trim();
   const selectedRegionLabel =
     region === "otherStates" && otherStateNameLabel
@@ -1432,6 +1482,14 @@ export default function RoadshowQO() {
     setVehicleDiscountAmount(nextDiscountAmount);
     setLeastSellingPriceInput(String(nextDiscountAmount));
     setLeastSellingPriceError("");
+    setBrandingCostDiscount(0);
+    setBrandingCostDiscountInput("0");
+    setRtoPermissionDiscount(0);
+    setRtoPermissionDiscountInput("0");
+    setBrandingCostDiscount(0);
+    setBrandingCostDiscountInput("0");
+    setRtoPermissionDiscount(0);
+    setRtoPermissionDiscountInput("0");
     setExtraKm(0);
     setExtraKmInput("0");
     setExtraHours(0);
@@ -1449,6 +1507,20 @@ export default function RoadshowQO() {
     });
     setActiveQuotationMeta(null);
   }, [selectedVehicle, selectedVehicleVariant, region]);
+
+  useEffect(() => {
+    if (canShowBrandingCostDiscount) return;
+
+    setBrandingCostDiscount(0);
+    setBrandingCostDiscountInput("0");
+  }, [canShowBrandingCostDiscount]);
+
+  useEffect(() => {
+    if (canShowRtoPermissionDiscount) return;
+
+    setRtoPermissionDiscount(0);
+    setRtoPermissionDiscountInput("0");
+  }, [canShowRtoPermissionDiscount]);
 
   useEffect(() => {
     if (canShowLedAndPowerAddOns) return;
@@ -1480,6 +1552,8 @@ export default function RoadshowQO() {
     promoterDaysValue = promoterDays,
     rtoBillingMonthsValue = getRtoBillingMonths(daysValue),
     vehicleDiscountAmountValue = vehicleDiscountAmount,
+    brandingCostDiscountValue = brandingCostDiscount,
+    rtoPermissionDiscountValue = rtoPermissionDiscount,
     extraKmValue = extraKm,
     extraHoursValue = extraHours,
   }: {
@@ -1490,6 +1564,8 @@ export default function RoadshowQO() {
     promoterDaysValue?: number;
     rtoBillingMonthsValue?: number;
     vehicleDiscountAmountValue?: number;
+    brandingCostDiscountValue?: number;
+    rtoPermissionDiscountValue?: number;
     extraKmValue?: number;
     extraHoursValue?: number;
   } = {}) => {
@@ -1505,6 +1581,13 @@ export default function RoadshowQO() {
     const effectiveExtraHours = Math.max(Number(extraHoursValue) || 0, 0);
     const effectiveExtraKmRate = Math.max(extraKmRate || 0, 0);
     const effectiveExtraHourRate = Math.max(extraHourRate || 0, 0);
+    const effectiveBrandingCostDiscountValue = canShowBrandingCostDiscount
+      ? brandingCostDiscountValue
+      : 0;
+    const effectiveRtoPermissionDiscountValue =
+      Number(pricingValue.rtoPermission || 0) !== 0
+        ? rtoPermissionDiscountValue
+        : 0;
 
     const actualVehicleRate =
       selectedVehicleRate > 0 ? selectedVehicleRate : pricingValue.vehicleRate;
@@ -1525,14 +1608,35 @@ export default function RoadshowQO() {
     const vehicleDiscountAmount =
       vehicleDiscountRate * quantityValue * daysValue;
 
+    const brandingActualAmount = pricingValue.brandingCost * quantityValue;
+    const brandingDiscountAmount = Math.min(
+      Math.max(Number(effectiveBrandingCostDiscountValue) || 0, 0),
+      brandingActualAmount,
+    );
+    const brandingFinalAmount = Math.max(
+      brandingActualAmount - brandingDiscountAmount,
+      0,
+    );
+
+    const rtoActualAmount =
+      pricingValue.rtoPermission * rtoBillingMonthsValue * quantityValue;
+    const rtoDiscountAmount = Math.min(
+      Math.max(Number(effectiveRtoPermissionDiscountValue) || 0, 0) *
+        rtoBillingMonthsValue,
+      rtoActualAmount,
+    );
+    const rtoFinalAmount = Math.max(rtoActualAmount - rtoDiscountAmount, 0);
+
     const items: QuoteLineItem[] = [
       {
         label: "Vehicle Rental",
         description: selectedVehicleDisplayName,
-        rateLabel: `${formatPrice(finalVehicleRate)} / day`,
+        // Keep the quotation table rate/amount as the master value.
+        // The vehicle discount is shown only in the discount footer section.
+        rateLabel: `${formatPrice(actualVehicleRate)} / day`,
         periodLabel: `${daysValue} day(s)`,
         quantityLabel: `${quantityValue}`,
-        formulaLabel: `${formatPrice(finalVehicleRate)} × ${daysValue} day(s) × ${quantityValue} vehicle(s)`,
+        formulaLabel: `${formatPrice(actualVehicleRate)} × ${daysValue} day(s) × ${quantityValue} vehicle(s)`,
         amount: finalVehicleAmount,
         actualRate: actualVehicleRate,
         finalRate: finalVehicleRate,
@@ -1547,7 +1651,12 @@ export default function RoadshowQO() {
         periodLabel: "One-time",
         quantityLabel: `${quantityValue}`,
         formulaLabel: `${formatPrice(pricingValue.brandingCost)} × ${quantityValue} vehicle(s)`,
-        amount: pricingValue.brandingCost * quantityValue,
+        amount: brandingFinalAmount,
+        actualRate: pricingValue.brandingCost,
+        finalRate: Math.max(pricingValue.brandingCost, 0),
+        discountRate: brandingDiscountAmount,
+        actualAmount: brandingActualAmount,
+        discountAmount: brandingDiscountAmount,
       },
       {
         label: "RTO Permission",
@@ -1556,8 +1665,12 @@ export default function RoadshowQO() {
         periodLabel: `${rtoBillingMonthsValue} billing month(s)`,
         quantityLabel: `${quantityValue}`,
         formulaLabel: `${formatPrice(pricingValue.rtoPermission)} × ${rtoBillingMonthsValue} month(s) × ${quantityValue} vehicle(s)`,
-        amount:
-          pricingValue.rtoPermission * rtoBillingMonthsValue * quantityValue,
+        amount: rtoFinalAmount,
+        actualRate: pricingValue.rtoPermission,
+        finalRate: Math.max(pricingValue.rtoPermission, 0),
+        discountRate: Math.max(Number(effectiveRtoPermissionDiscountValue) || 0, 0),
+        actualAmount: rtoActualAmount,
+        discountAmount: rtoDiscountAmount,
       },
     ];
 
@@ -1592,7 +1705,7 @@ export default function RoadshowQO() {
         description: "Campaign vehicle movement support",
         rateLabel: `${formatPrice(pricingValue.upDownCharge)} / vehicle`,
         periodLabel: "One-time",
-        quantityLabel: `${quantityValue} vehicle(s)`,
+        quantityLabel: `${quantityValue}`,
         formulaLabel: `${formatPrice(pricingValue.upDownCharge)} × ${quantityValue} vehicle(s)`,
         amount: pricingValue.upDownCharge * quantityValue,
       });
@@ -1637,7 +1750,12 @@ export default function RoadshowQO() {
       });
     }
 
-    return items.filter((item) => item.amount > 0);
+    return items.filter(
+      (item) =>
+        item.amount > 0 ||
+        (item.actualAmount || 0) > 0 ||
+        (item.discountAmount || 0) > 0,
+    );
   };
 
   const quoteLineItems = useMemo<QuoteLineItem[]>(() => {
@@ -1649,6 +1767,8 @@ export default function RoadshowQO() {
       promoterDaysValue: promoterDays,
       rtoBillingMonthsValue: rtoBillingMonths,
       vehicleDiscountAmountValue: vehicleDiscountAmount,
+      brandingCostDiscountValue: brandingCostDiscount,
+      rtoPermissionDiscountValue: rtoPermissionDiscount,
       extraKmValue: extraKm,
       extraHoursValue: extraHours,
     });
@@ -1667,7 +1787,11 @@ export default function RoadshowQO() {
     includeLed,
     includePowerBackup,
     canShowLedAndPowerAddOns,
+    canShowBrandingCostDiscount,
+    canShowRtoPermissionDiscount,
     vehicleDiscountAmount,
+    brandingCostDiscount,
+    rtoPermissionDiscount,
     rtoBillingMonths,
     extraKm,
     extraHours,
@@ -1735,6 +1859,17 @@ export default function RoadshowQO() {
 
   const isCompactProposal = quoteLineItems.length >= 6;
 
+  const effectiveBrandingCostDiscountForApproval = canShowBrandingCostDiscount
+    ? Math.max(Number(brandingCostDiscount) || 0, 0)
+    : 0;
+  const effectiveRtoPermissionDiscountForApproval = canShowRtoPermissionDiscount
+    ? Math.max(Number(rtoPermissionDiscount) || 0, 0)
+    : 0;
+
+  const requiresApproval =
+    effectiveBrandingCostDiscountForApproval > 0 ||
+    effectiveRtoPermissionDiscountForApproval > 0;
+
   const clearSavedQuotation = () => {
     setActiveQuotationMeta(null);
   };
@@ -1770,6 +1905,10 @@ export default function RoadshowQO() {
     setVehicleDiscountAmount(prefilledDiscountAmount);
     setLeastSellingPriceInput(String(prefilledDiscountAmount));
     setLeastSellingPriceError("");
+    setBrandingCostDiscount(0);
+    setBrandingCostDiscountInput("0");
+    setRtoPermissionDiscount(0);
+    setRtoPermissionDiscountInput("0");
     setActiveQuotationMeta(null);
   };
 
@@ -1902,6 +2041,46 @@ export default function RoadshowQO() {
       setLeastSellingPriceInput(String(vehicleDiscountAmount || 0));
       setLeastSellingPriceError("");
     }
+  };
+
+  const handleBrandingCostDiscountChange = (value: string) => {
+    clearSavedQuotation();
+
+    const digitsOnly = sanitizeNumberText(value);
+    const nextDiscount = digitsOnly ? Number(digitsOnly) : 0;
+
+    setBrandingCostDiscountInput(digitsOnly);
+    setBrandingCostDiscount(Number.isFinite(nextDiscount) ? nextDiscount : 0);
+  };
+
+  const handleBrandingCostDiscountBlur = () => {
+    const nextDiscount = Number(sanitizeNumberText(brandingCostDiscountInput));
+    const safeDiscount = Number.isFinite(nextDiscount)
+      ? Math.max(nextDiscount, 0)
+      : 0;
+
+    setBrandingCostDiscount(safeDiscount);
+    setBrandingCostDiscountInput(String(safeDiscount));
+  };
+
+  const handleRtoPermissionDiscountChange = (value: string) => {
+    clearSavedQuotation();
+
+    const digitsOnly = sanitizeNumberText(value);
+    const nextDiscount = digitsOnly ? Number(digitsOnly) : 0;
+
+    setRtoPermissionDiscountInput(digitsOnly);
+    setRtoPermissionDiscount(Number.isFinite(nextDiscount) ? nextDiscount : 0);
+  };
+
+  const handleRtoPermissionDiscountBlur = () => {
+    const nextDiscount = Number(sanitizeNumberText(rtoPermissionDiscountInput));
+    const safeDiscount = Number.isFinite(nextDiscount)
+      ? Math.max(nextDiscount, 0)
+      : 0;
+
+    setRtoPermissionDiscount(safeDiscount);
+    setRtoPermissionDiscountInput(String(safeDiscount));
   };
 
   const handleExtraKmChange = (value: string) => {
@@ -2216,6 +2395,10 @@ export default function RoadshowQO() {
     setVehicleDiscountAmount(0);
     setLeastSellingPriceInput("0");
     setLeastSellingPriceError("");
+    setBrandingCostDiscount(0);
+    setBrandingCostDiscountInput("0");
+    setRtoPermissionDiscount(0);
+    setRtoPermissionDiscountInput("0");
     setExtraKm(0);
     setExtraKmInput("0");
     setExtraHours(0);
@@ -2508,6 +2691,8 @@ export default function RoadshowQO() {
       grandTotal?: number;
       rtoBillingMonths?: number;
       vehicleDiscountAmount?: number;
+      brandingCostDiscount?: number;
+      rtoPermissionDiscount?: number;
       extraKm?: number;
       extraHours?: number;
     } = {},
@@ -2524,6 +2709,13 @@ export default function RoadshowQO() {
     const effectivePricingDetails = overrides.pricingDetails ?? pricingDetails;
     const effectiveVehicleDiscountAmount =
       overrides.vehicleDiscountAmount ?? vehicleDiscountAmount;
+    const effectiveBrandingCostDiscount = canShowBrandingCostDiscount
+      ? overrides.brandingCostDiscount ?? brandingCostDiscount
+      : 0;
+    const effectiveRtoPermissionDiscount =
+      Number(effectivePricingDetails.rtoPermission || 0) !== 0
+        ? overrides.rtoPermissionDiscount ?? rtoPermissionDiscount
+        : 0;
     const effectiveExtraKm = overrides.extraKm ?? extraKm;
     const effectiveExtraHours = overrides.extraHours ?? extraHours;
     const effectiveRtoBillingMonths =
@@ -2538,6 +2730,8 @@ export default function RoadshowQO() {
         promoterDaysValue: effectivePromoterDays,
         rtoBillingMonthsValue: effectiveRtoBillingMonths,
         vehicleDiscountAmountValue: effectiveVehicleDiscountAmount,
+        brandingCostDiscountValue: effectiveBrandingCostDiscount,
+        rtoPermissionDiscountValue: effectiveRtoPermissionDiscount,
         extraKmValue: effectiveExtraKm,
         extraHoursValue: effectiveExtraHours,
       });
@@ -2570,6 +2764,9 @@ export default function RoadshowQO() {
       effectiveVehicleBaseRate - effectiveVehicleDiscountRate,
       0,
     );
+    const effectiveApprovalRequired =
+      Math.max(Number(effectiveBrandingCostDiscount) || 0, 0) > 0 ||
+      Math.max(Number(effectiveRtoPermissionDiscount) || 0, 0) > 0;
 
     const effectiveSelectedAddOns: string[] = [];
 
@@ -2685,6 +2882,16 @@ export default function RoadshowQO() {
           ...effectivePricingDetails,
           vehicleDiscountAmount: effectiveVehicleDiscountRate,
           vehicleFinalRate: effectiveVehicleFinalRate,
+          brandingCostDiscount: Math.max(
+            Number(effectiveBrandingCostDiscount) || 0,
+            0,
+          ),
+          rtoPermissionDiscount: Math.max(
+            Number(effectiveRtoPermissionDiscount) || 0,
+            0,
+          ),
+          rtoPermissionDiscountBillingMonths: effectiveRtoBillingMonths,
+          approvalRequired: effectiveApprovalRequired,
           extraKm: effectiveExtraKm,
           extraKmRate,
           extraHours: effectiveExtraHours,
@@ -2725,6 +2932,13 @@ export default function RoadshowQO() {
           signatureCrop,
           signatureDataUrl: "",
         },
+      },
+
+      approval: {
+        required: effectiveApprovalRequired,
+        status: effectiveApprovalRequired ? "waiting_for_approval" : "not_required",
+        requestedAt: effectiveApprovalRequired ? new Date().toISOString() : null,
+        approvedAt: null,
       },
 
       termsAndConditions,
@@ -2819,6 +3033,10 @@ export default function RoadshowQO() {
       setVehicleDiscountAmount(resetDiscountAmount);
       setLeastSellingPriceInput(String(resetDiscountAmount));
       setLeastSellingPriceError("");
+      setBrandingCostDiscount(0);
+      setBrandingCostDiscountInput("0");
+      setRtoPermissionDiscount(0);
+      setRtoPermissionDiscountInput("0");
       setExtraKm(0);
       setExtraKmInput("0");
       setExtraHours(0);
@@ -2844,6 +3062,10 @@ export default function RoadshowQO() {
       setVehicleDiscountAmount(resetDiscountAmount);
       setLeastSellingPriceInput(String(resetDiscountAmount));
       setLeastSellingPriceError("");
+      setBrandingCostDiscount(0);
+      setBrandingCostDiscountInput("0");
+      setRtoPermissionDiscount(0);
+      setRtoPermissionDiscountInput("0");
       setExtraKm(0);
       setExtraKmInput("0");
       setExtraHours(0);
@@ -2868,6 +3090,13 @@ export default function RoadshowQO() {
   };
 
   const prepareAndPrintProposal = async () => {
+    if (requiresApproval) {
+      setPdfError(
+        "This quotation has Branding/RTO discount and must be submitted for approval before print.",
+      );
+      return;
+    }
+
     setIsPdfMode(true);
     setPdfError("");
 
@@ -2931,6 +3160,26 @@ export default function RoadshowQO() {
       }
     }
 
+    const parsedBrandingCostDiscount = Number(
+      sanitizeNumberText(brandingCostDiscountInput),
+    );
+    const normalizedBrandingCostDiscount =
+      canShowBrandingCostDiscount &&
+      Number.isFinite(parsedBrandingCostDiscount) &&
+      parsedBrandingCostDiscount >= 0
+        ? parsedBrandingCostDiscount
+        : 0;
+
+    const parsedRtoPermissionDiscount = Number(
+      sanitizeNumberText(rtoPermissionDiscountInput),
+    );
+    const normalizedRtoPermissionDiscount =
+      canShowRtoPermissionDiscount &&
+      Number.isFinite(parsedRtoPermissionDiscount) &&
+      parsedRtoPermissionDiscount >= 0
+        ? parsedRtoPermissionDiscount
+        : 0;
+
     const parsedExtraKm = Number(sanitizeNumberText(extraKmInput));
     const normalizedExtraKm =
       Number.isFinite(parsedExtraKm) && parsedExtraKm >= 0 ? parsedExtraKm : 0;
@@ -2964,6 +3213,8 @@ export default function RoadshowQO() {
       promoterDaysValue: normalizedPromoterDays,
       rtoBillingMonthsValue: normalizedRtoBillingMonths,
       vehicleDiscountAmountValue: normalizedDiscountAmount,
+      brandingCostDiscountValue: normalizedBrandingCostDiscount,
+      rtoPermissionDiscountValue: normalizedRtoPermissionDiscount,
       extraKmValue: normalizedExtraKm,
       extraHoursValue: normalizedExtraHours,
     });
@@ -2989,6 +3240,10 @@ export default function RoadshowQO() {
     setPromoterDaysInput(String(normalizedPromoterDays));
     setPromoterDaysError("");
     setGstPercent(normalizedGstPercent);
+    setBrandingCostDiscount(normalizedBrandingCostDiscount);
+    setBrandingCostDiscountInput(String(normalizedBrandingCostDiscount));
+    setRtoPermissionDiscount(normalizedRtoPermissionDiscount);
+    setRtoPermissionDiscountInput(String(normalizedRtoPermissionDiscount));
     setExtraKm(normalizedExtraKm);
     setExtraKmInput(String(normalizedExtraKm));
     setExtraHours(normalizedExtraHours);
@@ -3009,40 +3264,24 @@ export default function RoadshowQO() {
       grandTotal: normalizedGrandTotal,
       rtoBillingMonths: normalizedRtoBillingMonths,
       vehicleDiscountAmount: normalizedDiscountAmount,
+      brandingCostDiscount: normalizedBrandingCostDiscount,
+      rtoPermissionDiscount: normalizedRtoPermissionDiscount,
       extraKm: normalizedExtraKm,
       extraHours: normalizedExtraHours,
     };
   };
 
-  const handleDownloadPdf = async () => {
-    if (isGeneratingPdf) return;
+  const generateAndUploadRoadshowQuotationPdf = async (savedQuotation: {
+    quotationId: string;
+    quotationNumber: string;
+  }) => {
+    const stableLogoDataUrl = await imageSourceToDataUrl(displayLogo);
+    setPdfLogoSrc(stableLogoDataUrl);
 
-    const normalizedQuoteValues = normalizeMinimumFieldsForDownload();
-
-    if (!clientDetails.companyName.trim()) {
-      setPdfError("Client company name is required before downloading PDF.");
-      return;
-    }
+    setIsPdfMode(true);
+    document.body.classList.add("pdfExporting");
 
     try {
-      setPdfError("");
-      setIsGeneratingPdf(true);
-
-      const savedQuotation = await createRoadshowQuotation(
-        buildRoadshowQuotationPayload(normalizedQuoteValues),
-      );
-
-      setActiveQuotationMeta({
-        quotationId: savedQuotation.quotationId,
-        quotationNumber: savedQuotation.quotationNumber,
-      });
-
-      const stableLogoDataUrl = await imageSourceToDataUrl(displayLogo);
-      setPdfLogoSrc(stableLogoDataUrl);
-
-      setIsPdfMode(true);
-      document.body.classList.add("pdfExporting");
-
       await waitForNextPaint();
       await waitForImagesToLoad(".printableArea img");
 
@@ -3110,6 +3349,129 @@ export default function RoadshowQO() {
         fileName,
       });
 
+      return {
+        pdfBlob,
+        fileName,
+      };
+    } finally {
+      document.body.classList.remove("pdfExporting");
+      setPdfLogoSrc("");
+      setIsPdfMode(false);
+    }
+  };
+
+  const handleSubmitForApproval = async () => {
+    if (isSubmittingApproval || isGeneratingPdf) return;
+
+    const normalizedQuoteValues = normalizeMinimumFieldsForDownload();
+
+    if (!clientDetails.companyName.trim()) {
+      showTopMessage("Client company name is required before submitting approval.");
+      return;
+    }
+
+    const hasApprovalDiscount =
+      (normalizedQuoteValues.brandingCostDiscount || 0) > 0 ||
+      (normalizedQuoteValues.rtoPermissionDiscount || 0) > 0;
+
+    if (!hasApprovalDiscount) {
+      showTopMessage(
+        "Approval is required only when Branding Cost Discount or RTO Permission Discount is greater than zero.",
+      );
+      return;
+    }
+
+    try {
+      setPdfError("");
+      setIsSubmittingApproval(true);
+
+      const approvalPayload = {
+        ...buildRoadshowQuotationPayload(normalizedQuoteValues),
+        status: "waiting_for_approval",
+        approval: {
+          required: true,
+          status: "waiting_for_approval",
+          requestedAt: new Date().toISOString(),
+          approvedAt: null,
+        },
+      };
+
+      const savedQuotation = await createRoadshowQuotation(approvalPayload);
+
+      setActiveQuotationMeta({
+        quotationId: savedQuotation.quotationId,
+        quotationNumber: savedQuotation.quotationNumber,
+      });
+
+      await generateAndUploadRoadshowQuotationPdf(savedQuotation);
+
+      setApprovalToastMessage("Quotation approval request has been submitted.");
+
+      if (approvalRedirectTimeoutRef.current) {
+        window.clearTimeout(approvalRedirectTimeoutRef.current);
+      }
+
+      approvalRedirectTimeoutRef.current = window.setTimeout(() => {
+        navigate("/roadshow-quotations");
+      }, 10000);
+    } catch (error) {
+      console.error(error);
+
+      if ((error as Error & { status?: number })?.status === 409) {
+        await fetchNextQuotationNumber();
+
+        showTopMessage(
+          "This quotation number was already used. A new EST number has been generated. Please click Submit for Approval again.",
+        );
+      } else {
+        showTopMessage(
+          error instanceof Error
+            ? `Approval submission failed: ${error.message}`
+            : "Approval submission failed. Please try again.",
+        );
+      }
+    } finally {
+      setIsSubmittingApproval(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (isGeneratingPdf || isSubmittingApproval) return;
+
+    const normalizedQuoteValues = normalizeMinimumFieldsForDownload();
+
+    if (
+      (normalizedQuoteValues.brandingCostDiscount || 0) > 0 ||
+      (normalizedQuoteValues.rtoPermissionDiscount || 0) > 0
+    ) {
+      showTopMessage(
+        "This quotation has Branding/RTO discount and must be submitted for approval before download.",
+      );
+      return;
+    }
+
+    if (!clientDetails.companyName.trim()) {
+      showTopMessage("Client company name is required before downloading PDF.");
+      return;
+    }
+
+    try {
+      setPdfError("");
+      setIsGeneratingPdf(true);
+
+      const savedQuotation = await createRoadshowQuotation(
+        buildRoadshowQuotationPayload(normalizedQuoteValues),
+      );
+
+      setActiveQuotationMeta({
+        quotationId: savedQuotation.quotationId,
+        quotationNumber: savedQuotation.quotationNumber,
+      });
+
+      const { pdfBlob, fileName } = await generateAndUploadRoadshowQuotationPdf(
+        savedQuotation,
+      );
+
       triggerBlobDownload(pdfBlob, fileName);
 
       await resetQuotationForm();
@@ -3119,20 +3481,17 @@ export default function RoadshowQO() {
       if ((error as Error & { status?: number })?.status === 409) {
         await fetchNextQuotationNumber();
 
-        setPdfError(
+        showTopMessage(
           "This quotation number was already used. A new EST number has been generated. Please click Download Proposal PDF again.",
         );
       } else {
-        setPdfError(
+        showTopMessage(
           error instanceof Error
             ? `PDF download failed: ${error.message}`
             : "PDF download failed. Please try again.",
         );
       }
     } finally {
-      document.body.classList.remove("pdfExporting");
-      setPdfLogoSrc("");
-      setIsPdfMode(false);
       setIsGeneratingPdf(false);
     }
   };
@@ -3170,22 +3529,37 @@ export default function RoadshowQO() {
               Show Quotations List
             </Link>
 
-            <button
-              type="button"
-              onClick={prepareAndPrintProposal}
-              disabled={isGeneratingPdf}
-            >
-              Print A4
-            </button>
+            {!requiresApproval && (
+              <>
+                <button
+                  type="button"
+                  onClick={prepareAndPrintProposal}
+                  disabled={isGeneratingPdf || isSubmittingApproval}
+                >
+                  Print A4
+                </button>
 
-            <button
-              type="button"
-              className="primaryAction"
-              onClick={handleDownloadPdf}
-              disabled={isGeneratingPdf}
-            >
-              {isGeneratingPdf ? "Preparing PDF..." : "Download Proposal PDF"}
-            </button>
+                <button
+                  type="button"
+                  className="primaryAction"
+                  onClick={handleDownloadPdf}
+                  disabled={isGeneratingPdf || isSubmittingApproval}
+                >
+                  {isGeneratingPdf ? "Preparing PDF..." : "Download Proposal PDF"}
+                </button>
+              </>
+            )}
+
+            {requiresApproval && (
+              <button
+                type="button"
+                className="primaryAction approvalAction"
+                onClick={handleSubmitForApproval}
+                disabled={isSubmittingApproval || isGeneratingPdf}
+              >
+                {isSubmittingApproval ? "Submitting..." : "Submit for Approval"}
+              </button>
+            )}
 
             <input
               ref={logoInputRef}
@@ -3198,10 +3572,36 @@ export default function RoadshowQO() {
         </div>
       </header>
 
-      <main className="qoMain">
-        <section className="qoFormColumn noPrint">
+      {approvalToastMessage && (
+        <div className="qoApprovalToastBackdrop noPrint">
+          <div className="qoApprovalToast" role="status" aria-live="polite">
+            <strong>{approvalToastMessage}</strong>
+            <span>Redirecting to submitted quotations automatically.</span>
+          </div>
+        </div>
+      )}
+
+      {(vehiclesError || pdfError) && (
+        <div
+          ref={topMessageRef}
+          className="qoTopMessageArea noPrint"
+          role="alert"
+          aria-live="assertive"
+          tabIndex={-1}
+        >
           {vehiclesError && <div className="qoError">{vehiclesError}</div>}
           {pdfError && <div className="qoError">{pdfError}</div>}
+        </div>
+      )}
+
+      <main className="qoMain">
+        <section className="qoFormColumn noPrint">
+          {requiresApproval && (
+            <div className="qoApprovalNotice">
+              Branding/RTO discount detected. PDF download and print are locked
+              for staff until admin approval.
+            </div>
+          )}
 
           <section className="qoCard">
             <h2>
@@ -4095,6 +4495,28 @@ export default function RoadshowQO() {
                 <small>Auto-loaded from selected vehicle and region.</small>
               </label>
 
+              {canShowBrandingCostDiscount && (
+                <label>
+                  Branding Cost Discount
+                  <div className="moneyInput">
+                    <span>Rs.</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={brandingCostDiscountInput}
+                      onChange={(event) =>
+                        handleBrandingCostDiscountChange(event.target.value)
+                      }
+                      onBlur={handleBrandingCostDiscountBlur}
+                    />
+                  </div>
+                  <small>
+                    One-time discount amount. Any value above 0 requires admin approval.
+                  </small>
+                </label>
+              )}
+
               <label>
                 RTO Permission ({selectedRegionLabel})
                 <div className="moneyInput">
@@ -4118,6 +4540,28 @@ export default function RoadshowQO() {
                     : "Locked. Auto-loaded from selected vehicle and region."}
                 </small>
               </label>
+
+              {canShowRtoPermissionDiscount && (
+                <label>
+                  RTO Permission Discount
+                  <div className="moneyInput">
+                    <span>Rs.</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={rtoPermissionDiscountInput}
+                      onChange={(event) =>
+                        handleRtoPermissionDiscountChange(event.target.value)
+                      }
+                      onBlur={handleRtoPermissionDiscountBlur}
+                    />
+                  </div>
+                  <small>
+                    Multiplied by {rtoBillingMonths} RTO billing month(s) based on campaign days.
+                  </small>
+                </label>
+              )}
 
               <label>
                 Promoter Cost / Day
@@ -4526,9 +4970,7 @@ export default function RoadshowQO() {
                         <td>
                           {item.discountAmount && item.discountAmount > 0 ? (
                             <div className="quoteRateBreakdown">
-                              <span>
-                                {formatPrice(item.actualRate || 0)} / day
-                              </span>
+                              <span>{item.rateLabel}</span>
                             </div>
                           ) : (
                             item.rateLabel
