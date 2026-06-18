@@ -24,6 +24,8 @@ const CATEGORY_ORDER = ["Flex Branding", "Hybrid LED + Flex", "LED Vehicles"];
 const LED_TV_ADDON_RATE_PER_DAY = 350;
 const POWER_BACKUP_ADDON_RATE_PER_DAY = 650;
 const RTO_PERMISSION_VALIDITY_DAYS = 30;
+const UP_DOWN_FREE_KM_LIMIT = 200;
+const UP_DOWN_CHARGE_DAYS_THRESHOLD = 25;
 
 const ENABLE_DIGITAL_SIGNATURE = false; // set true to show and use the digital signature upload/crop/signatory flow
 const ENABLE_QUOTATION_WATERMARK = false; // set false to hide the logo watermark in preview, print, and generated PDF
@@ -1156,6 +1158,8 @@ export default function RoadshowQO() {
   const [promoterDaysInput, setPromoterDaysInput] = useState("1");
   const [days, setDays] = useState(10);
   const [daysInput, setDaysInput] = useState("10");
+  const [upDownKm, setUpDownKm] = useState(0);
+  const [upDownKmInput, setUpDownKmInput] = useState("0");
   const [kmLimit, setKmLimit] = useState(60);
   const [minimumDays, setMinimumDays] = useState(10);
   const [gstPercent, setGstPercent] = useState(18);
@@ -1382,6 +1386,33 @@ export default function RoadshowQO() {
     return parseMoney(selectedPackageDetails.extraHour);
   }, [selectedPackageDetails.extraHour]);
 
+  const upDownRatePerKm = Math.max(Number(extraKmRate) || 0, 0);
+
+  const shouldApplyUpDownCharge =
+    days < UP_DOWN_CHARGE_DAYS_THRESHOLD &&
+    upDownKm > UP_DOWN_FREE_KM_LIMIT &&
+    upDownRatePerKm > 0;
+
+  const calculatedUpDownChargePerVehicle = shouldApplyUpDownCharge
+    ? upDownKm * upDownRatePerKm
+    : 0;
+
+  const calculatedUpDownChargeTotal =
+    calculatedUpDownChargePerVehicle * Math.max(Number(quantity) || 0, 0);
+
+  useEffect(() => {
+    setPricingDetails((current) => {
+      if (current.upDownCharge === calculatedUpDownChargePerVehicle) {
+        return current;
+      }
+
+      return {
+        ...current,
+        upDownCharge: calculatedUpDownChargePerVehicle,
+      };
+    });
+  }, [calculatedUpDownChargePerVehicle]);
+
   const termsAndConditions = useMemo(() => {
     const baseTerms = buildTermsAndConditions({
       dailyKmLimit: selectedPackageDetails.kmLimit || kmLimit,
@@ -1494,6 +1525,8 @@ export default function RoadshowQO() {
     setExtraKmInput("0");
     setExtraHours(0);
     setExtraHoursInput("0");
+    setUpDownKm(0);
+    setUpDownKmInput("0");
     setCampaignDaysError("");
     setKmLimit(nextPackageDetails.kmLimit);
     setMinimumDays(nextMinimumDays);
@@ -1556,6 +1589,7 @@ export default function RoadshowQO() {
     rtoPermissionDiscountValue = rtoPermissionDiscount,
     extraKmValue = extraKm,
     extraHoursValue = extraHours,
+    upDownKmValue = upDownKm,
   }: {
     pricingValue?: PricingDetails;
     quantityValue?: number;
@@ -1568,6 +1602,7 @@ export default function RoadshowQO() {
     rtoPermissionDiscountValue?: number;
     extraKmValue?: number;
     extraHoursValue?: number;
+    upDownKmValue?: number;
   } = {}) => {
     const effectivePowerBackupRate =
       pricingValue.powerBackup > 0
@@ -1581,6 +1616,15 @@ export default function RoadshowQO() {
     const effectiveExtraHours = Math.max(Number(extraHoursValue) || 0, 0);
     const effectiveExtraKmRate = Math.max(extraKmRate || 0, 0);
     const effectiveExtraHourRate = Math.max(extraHourRate || 0, 0);
+    const effectiveUpDownKm = Math.max(Number(upDownKmValue) || 0, 0);
+    const effectiveUpDownRatePerKm = Math.max(Number(upDownRatePerKm) || 0, 0);
+    const shouldChargeUpDown =
+      daysValue < UP_DOWN_CHARGE_DAYS_THRESHOLD &&
+      effectiveUpDownKm > UP_DOWN_FREE_KM_LIMIT &&
+      effectiveUpDownRatePerKm > 0;
+    const effectiveUpDownChargePerVehicle = shouldChargeUpDown
+      ? effectiveUpDownKm * effectiveUpDownRatePerKm
+      : 0;
     const effectiveBrandingCostDiscountValue = canShowBrandingCostDiscount
       ? brandingCostDiscountValue
       : 0;
@@ -1699,15 +1743,18 @@ export default function RoadshowQO() {
       });
     }
 
-    if (pricingValue.upDownCharge > 0) {
+    if (effectiveUpDownChargePerVehicle > 0) {
       items.push({
-        label: "Up & Down Charge",
-        description: "Campaign vehicle movement support",
-        rateLabel: `${formatPrice(pricingValue.upDownCharge)} / vehicle`,
+        label: "Up & Down Charges",
+        description: `(campaign < ${UP_DOWN_CHARGE_DAYS_THRESHOLD} days, Distance > ${UP_DOWN_FREE_KM_LIMIT} km)`,
+        rateLabel: `${formatPrice(effectiveUpDownRatePerKm)} / km`,
         periodLabel: "One-time",
         quantityLabel: `${quantityValue}`,
-        formulaLabel: `${formatPrice(pricingValue.upDownCharge)} × ${quantityValue} vehicle(s)`,
-        amount: pricingValue.upDownCharge * quantityValue,
+        formulaLabel: `${formatPrice(effectiveUpDownRatePerKm)} × ${effectiveUpDownKm} km × ${quantityValue} vehicle(s)`,
+        amount: effectiveUpDownChargePerVehicle * quantityValue,
+        actualRate: effectiveUpDownRatePerKm,
+        finalRate: effectiveUpDownChargePerVehicle,
+        actualAmount: effectiveUpDownChargePerVehicle * quantityValue,
       });
     }
 
@@ -1771,6 +1818,7 @@ export default function RoadshowQO() {
       rtoPermissionDiscountValue: rtoPermissionDiscount,
       extraKmValue: extraKm,
       extraHoursValue: extraHours,
+      upDownKmValue: upDownKm,
     });
   }, [
     selectedVehicle,
@@ -1795,8 +1843,10 @@ export default function RoadshowQO() {
     rtoBillingMonths,
     extraKm,
     extraHours,
+    upDownKm,
     extraKmRate,
     extraHourRate,
+    upDownRatePerKm,
   ]);
 
   const subtotal = useMemo(() => {
@@ -1901,6 +1951,8 @@ export default function RoadshowQO() {
     setQuantityError("");
     setDays(prefilledDays);
     setDaysInput(String(prefilledDays));
+    setUpDownKm(0);
+    setUpDownKmInput("0");
     setCampaignDaysError("");
     setVehicleDiscountAmount(prefilledDiscountAmount);
     setLeastSellingPriceInput(String(prefilledDiscountAmount));
@@ -1913,6 +1965,36 @@ export default function RoadshowQO() {
   };
 
   const hasLoadedPrefilledQuotationValuesRef = useRef(false);
+
+
+  useEffect(() => {
+  const handlePrintShortcut = (event: KeyboardEvent) => {
+    const pressedKey = String(event.key || "").toLowerCase();
+    const isPrintShortcut =
+      (event.ctrlKey || event.metaKey) && pressedKey === "p";
+
+    if (!isPrintShortcut) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (typeof event.stopImmediatePropagation === "function") {
+      event.stopImmediatePropagation();
+    }
+
+    showTopMessage(
+      "Ctrl + P / Cmd + P print shortcut is disabled. Please use Download Proposal PDF.",
+    );
+  };
+
+  window.addEventListener("keydown", handlePrintShortcut, true);
+  document.addEventListener("keydown", handlePrintShortcut, true);
+
+  return () => {
+    window.removeEventListener("keydown", handlePrintShortcut, true);
+    document.removeEventListener("keydown", handlePrintShortcut, true);
+  };
+}, []);
 
   useEffect(() => {
     if (
@@ -2133,6 +2215,32 @@ export default function RoadshowQO() {
 
     setExtraHours(safeExtraHours);
     setExtraHoursInput(String(safeExtraHours));
+  };
+
+  const handleUpDownKmChange = (value: string) => {
+    clearSavedQuotation();
+
+    const digitsOnly = sanitizeNumberText(value);
+    const nextUpDownKm = digitsOnly ? Number(digitsOnly) : 0;
+
+    setUpDownKmInput(digitsOnly);
+    setUpDownKm(Number.isFinite(nextUpDownKm) ? nextUpDownKm : 0);
+  };
+
+  const handleUpDownKmBlur = () => {
+    if (!upDownKmInput) {
+      setUpDownKm(0);
+      setUpDownKmInput("0");
+      return;
+    }
+
+    const nextUpDownKm = Number(sanitizeNumberText(upDownKmInput));
+    const safeUpDownKm = Number.isFinite(nextUpDownKm)
+      ? Math.max(nextUpDownKm, 0)
+      : 0;
+
+    setUpDownKm(safeUpDownKm);
+    setUpDownKmInput(String(safeUpDownKm));
   };
 
   const handleQuantityChange = (value: string) => {
@@ -2403,6 +2511,8 @@ export default function RoadshowQO() {
     setExtraKmInput("0");
     setExtraHours(0);
     setExtraHoursInput("0");
+    setUpDownKm(0);
+    setUpDownKmInput("0");
     setCampaignDaysError("");
     setAddOnMessage("");
     setIncludePromoter(false);
@@ -2695,6 +2805,7 @@ export default function RoadshowQO() {
       rtoPermissionDiscount?: number;
       extraKm?: number;
       extraHours?: number;
+      upDownKm?: number;
     } = {},
   ) => {
     const effectiveQuantity = overrides.quantity ?? quantity;
@@ -2718,6 +2829,7 @@ export default function RoadshowQO() {
         : 0;
     const effectiveExtraKm = overrides.extraKm ?? extraKm;
     const effectiveExtraHours = overrides.extraHours ?? extraHours;
+    const effectiveUpDownKm = overrides.upDownKm ?? upDownKm;
     const effectiveRtoBillingMonths =
       overrides.rtoBillingMonths ?? getRtoBillingMonths(effectiveDays);
     const effectiveQuoteLineItems =
@@ -2734,6 +2846,7 @@ export default function RoadshowQO() {
         rtoPermissionDiscountValue: effectiveRtoPermissionDiscount,
         extraKmValue: effectiveExtraKm,
         extraHoursValue: effectiveExtraHours,
+        upDownKmValue: effectiveUpDownKm,
       });
     const effectiveSubtotal =
       overrides.subtotal ??
@@ -2850,6 +2963,13 @@ export default function RoadshowQO() {
         extraHours: effectiveExtraHours,
         extraKmRate,
         extraHourRate,
+        upDownKm: effectiveUpDownKm,
+        upDownFreeKmLimit: UP_DOWN_FREE_KM_LIMIT,
+        upDownChargeDaysThreshold: UP_DOWN_CHARGE_DAYS_THRESHOLD,
+        upDownRatePerKm,
+        upDownChargeApplies:
+          effectiveDays < UP_DOWN_CHARGE_DAYS_THRESHOLD &&
+          effectiveUpDownKm > UP_DOWN_FREE_KM_LIMIT,
         selectedVehicleVariantMinimumDays:
           selectedPackageDetails.minimumDays || null,
         quantity: effectiveQuantity,
@@ -2896,6 +3016,9 @@ export default function RoadshowQO() {
           extraKmRate,
           extraHours: effectiveExtraHours,
           extraHourRate,
+          upDownKm: effectiveUpDownKm,
+          upDownRatePerKm,
+          upDownChargePerVehicle: effectivePricingDetails.upDownCharge,
         },
         quoteLineItems: effectiveQuoteLineItems.map((item, index) => ({
           serialNumber: index + 1,
@@ -2982,6 +3105,8 @@ export default function RoadshowQO() {
     setExtraKmInput("0");
     setExtraHours(0);
     setExtraHoursInput("0");
+    setUpDownKm(0);
+    setUpDownKmInput("0");
     setCampaignDaysError("");
     setAddOnMessage("");
     setOtherStateName("");
@@ -3190,6 +3315,18 @@ export default function RoadshowQO() {
         ? parsedExtraHours
         : 0;
 
+    const parsedUpDownKm = Number(sanitizeNumberText(upDownKmInput));
+    const normalizedUpDownKm =
+      Number.isFinite(parsedUpDownKm) && parsedUpDownKm >= 0
+        ? parsedUpDownKm
+        : 0;
+    const normalizedUpDownChargePerVehicle =
+      normalizedDays < UP_DOWN_CHARGE_DAYS_THRESHOLD &&
+      normalizedUpDownKm > UP_DOWN_FREE_KM_LIMIT &&
+      upDownRatePerKm > 0
+        ? normalizedUpDownKm * upDownRatePerKm
+        : 0;
+
     const normalizedVehicleRate =
       selectedVehicleMaxRate || pricingDetails.vehicleRate;
     setVehicleDiscountAmount(normalizedDiscountAmount);
@@ -3202,6 +3339,7 @@ export default function RoadshowQO() {
         pricingDetails.powerBackup > 0
           ? pricingDetails.powerBackup
           : POWER_BACKUP_ADDON_RATE_PER_DAY,
+      upDownCharge: normalizedUpDownChargePerVehicle,
     };
 
     const normalizedRtoBillingMonths = getRtoBillingMonths(normalizedDays);
@@ -3217,6 +3355,7 @@ export default function RoadshowQO() {
       rtoPermissionDiscountValue: normalizedRtoPermissionDiscount,
       extraKmValue: normalizedExtraKm,
       extraHoursValue: normalizedExtraHours,
+      upDownKmValue: normalizedUpDownKm,
     });
     const normalizedSubtotal = normalizedQuoteLineItems.reduce(
       (total, item) => total + item.amount,
@@ -3248,6 +3387,8 @@ export default function RoadshowQO() {
     setExtraKmInput(String(normalizedExtraKm));
     setExtraHours(normalizedExtraHours);
     setExtraHoursInput(String(normalizedExtraHours));
+    setUpDownKm(normalizedUpDownKm);
+    setUpDownKmInput(String(normalizedUpDownKm));
     setPricingDetails(normalizedPricingDetails);
     setLeastSellingPriceError("");
 
@@ -3268,6 +3409,7 @@ export default function RoadshowQO() {
       rtoPermissionDiscount: normalizedRtoPermissionDiscount,
       extraKm: normalizedExtraKm,
       extraHours: normalizedExtraHours,
+      upDownKm: normalizedUpDownKm,
     };
   };
 
@@ -3531,13 +3673,13 @@ export default function RoadshowQO() {
 
             {!requiresApproval && (
               <>
-                <button
+                {/* <button
                   type="button"
                   onClick={prepareAndPrintProposal}
                   disabled={isGeneratingPdf || isSubmittingApproval}
                 >
                   Print A4
-                </button>
+                </button> */}
 
                 <button
                   type="button"
@@ -4301,17 +4443,49 @@ export default function RoadshowQO() {
               </label>
 
               <label>
-                Up & Down Charge
+                Up & Down KM
                 <input
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  value={pricingDetails.upDownCharge}
-                  onChange={(event) =>
-                    handlePricingChange("upDownCharge", event.target.value)
-                  }
+                  value={upDownKmInput}
+                  onChange={(event) => handleUpDownKmChange(event.target.value)}
+                  onBlur={handleUpDownKmBlur}
                 />
+                <small>
+                  Only numbers allowed. Charges apply only when campaign days are
+                  below {UP_DOWN_CHARGE_DAYS_THRESHOLD} and up & down km is above
+                  {" "}
+                  {UP_DOWN_FREE_KM_LIMIT} km. Rate is taken from the selected
+                  vehicle Extra KM value: {selectedPackageDetails.extraKm || "Not available"}.
+                </small>
               </label>
+
+              {shouldApplyUpDownCharge && (
+                <label>
+                  Up & Down Charges
+                  <div className="moneyInput">
+                    <span>Rs.</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={calculatedUpDownChargePerVehicle}
+                      readOnly
+                      disabled
+                    />
+                  </div>
+                  <small>
+                    Auto: {upDownKm} km × {formatPrice(upDownRatePerKm)} =
+                    {" "}
+                    {formatPrice(calculatedUpDownChargePerVehicle)} / vehicle.
+                    {" "}
+                    {quantity} vehicle(s) total =
+                    {" "}
+                    {formatPrice(calculatedUpDownChargeTotal)}.
+                  </small>
+                </label>
+              )}
 
               <label>
                 GST %
@@ -4889,6 +5063,11 @@ export default function RoadshowQO() {
                   </div>
 
                   <div>
+                    <span>Up & Down KM</span>
+                    <strong>{upDownKm} km</strong>
+                  </div>
+
+                  <div>
                     <span>Daily KM Limit</span>
                     <strong>{kmLimit} km/day</strong>
                   </div>
@@ -4964,6 +5143,21 @@ export default function RoadshowQO() {
                             <p className="quoteParticularDescription">
                               {item.description}
                             </p>
+                            {item.formulaLabel && (
+                              <small
+                                className="quoteParticularFormula"
+                                style={{
+                                  display: "block",
+                                  marginTop: "4px",
+                                  color: "#64748b",
+                                  fontSize: "11px",
+                                  fontWeight: 700,
+                                  textTransform: "none",
+                                }}
+                              >
+                                {item.formulaLabel}
+                              </small>
+                            )}
                           </div>
                         </td>
 
