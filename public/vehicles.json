@@ -454,16 +454,30 @@
   "id": 9,
   "category": "Innovative Model",
   "type": "Custom Fabrication",
-  "name": "Tata Ace 8 Feet Vehicle",
+  "name": "Tata Ace 8 Feet Vehicle - Innovative Fabrication",
   "shortDescription": "Custom fabricated format for innovative branding concepts.",
-  "pricePerDay": 0,
+  "pricePerDay": 2000,
   "packageTotal": "",
   "highlight": "Pricing entered manually per design",
   "images": ["/images/tata-ace-8ft-flex-1.png"],
   "quickSpecs": [
-    { "label": "KM", "value": "60 km/day" },
-    { "label": "Minimum", "value": "7 days" }
-  ],
+      {
+        "label": "KM",
+        "value": "40 km/day"
+      },
+      {
+        "label": "Extra KM",
+        "value": "Rs. 12/km"
+      },
+      {
+        "label": "Minimum",
+        "value": "10 days"
+      },
+       {
+        "label": "Extra Hours",
+        "value": "₹750 / Hour"
+      }
+    ],
   "included": ["Vehicle rent", "Driver bata, food & accommodation"],
   "addOns": [],
   "brandingStatus": "Fabrication cost applicable",
@@ -473,16 +487,26 @@
   "id": 10,
   "category": "Innovative Model",
   "type": "Custom Fabrication",
-  "name": "Tata Ace 10 Feet Vehicle",
+  "name": "Tata Ace 10 Feet Vehicle  - Innovative Fabrication",
   "shortDescription": "Custom fabricated format for innovative branding concepts with a larger surface.",
-  "pricePerDay": 0,
+  "pricePerDay": 1220,
   "packageTotal": "",
   "highlight": "Pricing entered manually per design",
   "images": ["/images/tata-ace-10ft-flex-1.png"],
   "quickSpecs": [
-    { "label": "KM", "value": "60 km/day" },
-    { "label": "Minimum", "value": "10 days" }
-  ],
+      {
+        "label": "KM",
+        "value": "40 km/day"
+      },
+      {
+        "label": "Extra KM",
+        "value": "Rs. 12/km"
+      },
+      {
+        "label": "Minimum",
+        "value": "10 days"
+      }
+    ],
   "included": ["Vehicle rent", "Driver bata, food & accommodation"],
   "addOns": [],
   "brandingStatus": "Fabrication cost applicable",
@@ -492,16 +516,26 @@
   "id": 11,
   "category": "Innovative Model",
   "type": "Custom Fabrication",
-  "name": "Tata Ultra 19 Feet",
+  "name": "Tata Ultra 19 Feet  - Innovative Fabrication",
   "shortDescription": "Large-format canter for high-impact custom innovation builds.",
-  "pricePerDay": 0,
+  "pricePerDay": 3000,
   "packageTotal": "",
   "highlight": "Pricing entered manually per design",
   "images": ["/images/tata-ultra-19ft-3side-led-1.png"],
   "quickSpecs": [
-    { "label": "KM", "value": "40 km/day" },
-    { "label": "Minimum", "value": "4 days" }
-  ],
+      {
+        "label": "KM",
+        "value": "40 km/day"
+      },
+      {
+        "label": "Extra KM",
+        "value": "Rs. 12/km"
+      },
+      {
+        "label": "Minimum",
+        "value": "10 days"
+      }
+    ],
   "included": ["Vehicle rent", "Driver bata, food & accommodation"],
   "addOns": [],
   "brandingStatus": "Fabrication cost applicable",

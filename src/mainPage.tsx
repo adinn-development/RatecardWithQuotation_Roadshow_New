@@ -742,11 +742,23 @@ export default function MainApp() {
     };
   }, [showJsonPanel]);
 
+  // const visibleVehicles = useMemo(() => {
+  //   return getValidVehicleRecords(vehicles).filter(
+  //     (vehicle) => !isVehicleHidden(vehicle),
+  //   );
+  // }, [vehicles]);
   const visibleVehicles = useMemo(() => {
-    return getValidVehicleRecords(vehicles).filter(
-      (vehicle) => !isVehicleHidden(vehicle),
-    );
-  }, [vehicles]);
+  return getValidVehicleRecords(vehicles).filter((vehicle) => {
+    if (isVehicleHidden(vehicle)) return false;
+
+    // Hide Innovative Model only on Main Page
+    if (normalizeCategory(vehicle.category) === "Innovative Model") {
+      return false;
+    }
+
+    return true;
+  });
+}, [vehicles]);
 
   const ignoredVehicleCount = vehicles.length - getValidVehicleRecords(vehicles).length;
   const hiddenVehicleCount =
