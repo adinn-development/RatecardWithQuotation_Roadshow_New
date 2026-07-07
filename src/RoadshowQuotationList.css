@@ -165,9 +165,31 @@
   font-weight: 700;
 }
 
+.quotationSuccess {
+  margin: 18px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.quotationFocusNotice {
+  margin: 0 18px 14px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  background: #fffbeb;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .quotationTableWrap {
   width: 100%;
   overflow-x: auto;
+  scroll-margin-top: 24px;
 }
 
 .quotationListTable {
@@ -193,6 +215,40 @@
   color: #111827;
   font-size: 14px;
   vertical-align: middle;
+  transition:
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.quotationListTable tr.quotationTargetRow td {
+  background: #fff7ed;
+  box-shadow:
+    inset 0 1px 0 rgba(245, 158, 11, 0.28),
+    inset 0 -1px 0 rgba(245, 158, 11, 0.28);
+  animation: quotationTargetPulse 1.25s ease-in-out 4;
+}
+
+.quotationListTable tr.quotationTargetRow td:first-child {
+  border-left: 4px solid #f59e0b;
+}
+
+.quotationListTable tr.quotationTargetRowSoft td {
+  background: #fffdf7;
+}
+
+.quotationListTable tr.quotationTargetRowSoft td:first-child {
+  border-left: 4px solid rgba(245, 158, 11, 0.45);
+}
+
+@keyframes quotationTargetPulse {
+  0%,
+  100% {
+    background: #fff7ed;
+  }
+
+  50% {
+    background: #ffedd5;
+  }
 }
 
 .dateCell,

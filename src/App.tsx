@@ -1,16 +1,57 @@
 /* eslint-disable */
 // @ts-nocheck
 
-
 import { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Link,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import MainApp from "./mainPage.tsx";
 import RoadshowQO from "./RoadshowQO.tsx";
 import NewPage from "./newPage.tsx";
 import RoadshowQuotationList from "./RoadshowQuotationList.tsx";
 
+function normalizeShortQuotationNumber(value = "") {
+  const cleanValue = String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
+
+  if (!cleanValue) return "";
+
+  if (/^\d+$/.test(cleanValue)) {
+    return `EST-${cleanValue}`;
+  }
+
+  return cleanValue.replace(/^EST(\d)/, "EST-$1");
+}
+
+function ShortQuotationRedirect() {
+  const navigate = useNavigate();
+  const { quotationNo = "" } = useParams();
+
+  useEffect(() => {
+    const quotationNumber = normalizeShortQuotationNumber(quotationNo);
+
+    if (!quotationNumber) {
+      navigate("/roadshow-quotations", { replace: true });
+      return;
+    }
+
+    navigate(
+      `/roadshow-quotations?qn=${encodeURIComponent(quotationNumber)}`,
+      { replace: true },
+    );
+  }, [quotationNo, navigate]);
+
+  return null;
+}
+
 function AdminQuickAccess() {
-  
   const [showQuickAccess, setShowQuickAccess] = useState(false);
 
   useEffect(() => {
@@ -44,8 +85,6 @@ function AdminQuickAccess() {
         clickableElement.className?.toString().toLowerCase().includes("login");
 
       if (!isLoginClick) return;
-
-     
     };
 
     document.addEventListener("click", handleClick, true);
@@ -155,6 +194,9 @@ function App() {
         <Route path="/roadshowQO" element={<RoadshowQO />} />
         <Route path="/newPage" element={<NewPage />} />
         <Route path="/roadshow-quotations" element={<RoadshowQuotationList />} />
+
+        {/* Short SMS/DLT URL */}
+        <Route path="/q/:quotationNo" element={<ShortQuotationRedirect />} />
       </Routes>
     </BrowserRouter>
   );

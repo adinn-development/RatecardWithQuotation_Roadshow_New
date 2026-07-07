@@ -8,7 +8,7 @@ const LOGO_SRC =
   "https://www.adinn.com/_next/static/media/AdinnLogo.80d7c577.svg";
 
 // KARTHI ADDED
-const USE_LOCAL_JSON = false; // set true for local, false for live
+const USE_LOCAL_JSON = true; // set true for local, false for live
 const VEHICLES_JSON_URL = USE_LOCAL_JSON
   ? "./vehicles.json"
   : "https://adinn-space.sgp1.cdn.digitaloceanspaces.com/roadshowRateCard/vehicles.json";
@@ -19,7 +19,9 @@ const API_BASE_URL = USE_LOCAL_API
   : "https://roadshow-backend.onrender.com";
 
 
+// const CATEGORY_ORDER = ["Flex Branding", "Hybrid LED + Flex", "LED Vehicles"];
 const CATEGORY_ORDER = ["Flex Branding", "Hybrid LED + Flex", "LED Vehicles"];
+
 
 const normalizeCategory = (category?: string) => {
   const safeCategory = String(category || "").trim();

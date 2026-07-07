@@ -2,7 +2,7 @@
 // @ts-nocheck
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import "./RoadshowQuotationList.css";
 import "./RoadshowQuotationList.approval.css";
 
@@ -13,6 +13,7 @@ const API_BASE_URL = USE_LOCAL_API
 
 const ROADSHOW_QUOTATION_API_URL = `${API_BASE_URL}/api/roadshow-quotations`;
 const DEFAULT_LOGO_SRC = "/adinn-logo.png";
+const SEARCH_DEBOUNCE_MS = 400;
 
 const COMPANY_FALLBACKS = {
   companyName: "Adinn Advertising Services Limited",
@@ -136,6 +137,33 @@ const formatPrice = (amount?: number) => {
 const safeText = (value?: string | number, fallback = "-") => {
   const text = String(value ?? "").trim();
   return text || fallback;
+};
+
+const normalizeQuotationNumberForFocus = (value?: string | number) => {
+  const cleanedValue = String(value ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
+
+  if (!cleanedValue) return "";
+
+  return cleanedValue.replace(/^EST(\d)/, "EST-$1");
+};
+
+const normalizeRouteQuotationNumber = (value?: string) => {
+  if (!value) return "";
+
+  try {
+    return normalizeQuotationNumberForFocus(decodeURIComponent(value));
+  } catch {
+    return normalizeQuotationNumberForFocus(value);
+  }
+};
+
+const getQuotationRowDomId = (quotationNumber?: string) => {
+  const normalized = normalizeQuotationNumberForFocus(quotationNumber);
+
+  return normalized ? `quotation-row-${normalized.toLowerCase()}` : undefined;
 };
 
 const getStaffDisplay = (item: RoadshowQuotationItem) => {
@@ -388,7 +416,7 @@ const QuotationProtectedPreview = ({ quotation }: { quotation: any }) => {
     <div className={`approvalPdfLikeBook ${densePreview ? "denseQuoteBook" : ""}`}>
       <article className="approvalPdfLikePage">
         <div className="approvalPreviewRibbon">
-          <span>Protected Approval Preview</span>
+          <span>Protected Approval Preview SSSSSSSSS</span>
           <strong className={`quotationStatusBadge ${statusMeta.className}`}>
             {statusMeta.label}
           </strong>
@@ -665,6 +693,14 @@ const QuotationProtectedPreview = ({ quotation }: { quotation: any }) => {
 };
 
 export default function RoadshowQuotationList() {
+  const [searchParams] = useSearchParams();
+  const queryQuotationNumberParam = searchParams.get("qn") || "";
+
+  const targetQuotationNumber = useMemo(
+    () => normalizeRouteQuotationNumber(queryQuotationNumberParam),
+    [queryQuotationNumberParam],
+  );
+
   const [items, setItems] = useState<RoadshowQuotationItem[]>([]);
   const [pagination, setPagination] = useState<PaginationData>({
     page: 1,
@@ -675,8 +711,11 @@ export default function RoadshowQuotationList() {
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState(targetQuotationNumber);
+  const [search, setSearch] = useState(targetQuotationNumber);
+  const [focusedQuotationNumber, setFocusedQuotationNumber] = useState(
+    targetQuotationNumber,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -692,6 +731,9 @@ export default function RoadshowQuotationList() {
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [previewError, setPreviewError] = useState("");
   const previewCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const targetRowRef = useRef<HTMLTableRowElement | null>(null);
+  const routeTargetAppliedRef = useRef("");
+  const targetHighlightTimerRef = useRef<number | null>(null);
 
   const pageNumbers = useMemo(() => {
     const totalPages = Math.max(pagination.totalPages || 1, 1);
@@ -755,6 +797,96 @@ export default function RoadshowQuotationList() {
   useEffect(() => {
     fetchQuotations();
   }, [page, limit, search]);
+
+  useEffect(() => {
+    const nextSearch = searchInput.trim();
+
+    const searchTimer = window.setTimeout(() => {
+      setPage(1);
+      setSearch((currentSearch) =>
+        currentSearch === nextSearch ? currentSearch : nextSearch,
+      );
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(searchTimer);
+    };
+  }, [searchInput]);
+
+  useEffect(() => {
+    if (!targetQuotationNumber) {
+      const previousRouteTarget = routeTargetAppliedRef.current;
+
+      routeTargetAppliedRef.current = "";
+      targetRowRef.current = null;
+      setFocusedQuotationNumber("");
+
+      if (previousRouteTarget && search === previousRouteTarget) {
+        setSearchInput("");
+        setSearch("");
+        setPage(1);
+      }
+
+      return;
+    }
+
+    if (routeTargetAppliedRef.current === targetQuotationNumber) return;
+
+    routeTargetAppliedRef.current = targetQuotationNumber;
+    targetRowRef.current = null;
+    setPage(1);
+    setSearchInput(targetQuotationNumber);
+    setSearch(targetQuotationNumber);
+    setFocusedQuotationNumber(targetQuotationNumber);
+  }, [targetQuotationNumber, search]);
+
+  useEffect(() => {
+    return () => {
+      if (targetHighlightTimerRef.current) {
+        window.clearTimeout(targetHighlightTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!targetQuotationNumber || isLoading) return;
+
+    const hasTargetQuotation = items.some(
+      (item) =>
+        normalizeQuotationNumberForFocus(item.quotationNumber) ===
+        targetQuotationNumber,
+    );
+
+    if (!hasTargetQuotation) return;
+
+    setFocusedQuotationNumber(targetQuotationNumber);
+
+    window.setTimeout(() => {
+      targetRowRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+        inline: "nearest",
+      });
+    }, 180);
+
+    if (targetHighlightTimerRef.current) {
+      window.clearTimeout(targetHighlightTimerRef.current);
+    }
+
+    targetHighlightTimerRef.current = window.setTimeout(() => {
+      setFocusedQuotationNumber("");
+    }, 7000);
+  }, [items, isLoading, targetQuotationNumber]);
+
+  useEffect(() => {
+    if (!targetQuotationNumber) return;
+
+    document.title = `${targetQuotationNumber} | Roadshow Quotations`;
+
+    return () => {
+      document.title = "ADINN Roadshow Quotations";
+    };
+  }, [targetQuotationNumber]);
 
   useEffect(() => {
     if (!previewTarget) return;
@@ -914,13 +1046,11 @@ export default function RoadshowQuotationList() {
             <input
               type="text"
               value={searchInput}
-              placeholder="Search quotation, company, client, staff..."
+              placeholder="Type to search quotation, company, client, staff..."
               onChange={(event) => setSearchInput(event.target.value)}
             />
 
-            <button type="submit">Search</button>
-
-            {search && (
+            {(searchInput || search) && (
               <button type="button" className="clearBtn" onClick={handleClearSearch}>
                 Clear
               </button>
@@ -950,6 +1080,7 @@ export default function RoadshowQuotationList() {
           <div className="quotationSuccess">{successMessage}</div>
         )}
 
+
         <div className="quotationTableWrap">
           <table className="quotationListTable">
             <thead>
@@ -976,9 +1107,29 @@ export default function RoadshowQuotationList() {
                   const isWaitingForApproval =
                     item.status === "waiting_for_approval";
                   const canViewQuotation = Boolean(pdfUrl || isWaitingForApproval);
+                  const rowQuotationNumber = normalizeQuotationNumberForFocus(
+                    item.quotationNumber,
+                  );
+                  const isTargetRow =
+                    Boolean(targetQuotationNumber) &&
+                    rowQuotationNumber === targetQuotationNumber;
+                  const isFocusedTargetRow =
+                    Boolean(focusedQuotationNumber) &&
+                    rowQuotationNumber === focusedQuotationNumber;
 
                   return (
-                    <tr key={item._id}>
+                    <tr
+                      key={item._id}
+                      id={getQuotationRowDomId(item.quotationNumber)}
+                      ref={isTargetRow ? targetRowRef : null}
+                      className={
+                        isFocusedTargetRow
+                          ? "quotationTargetRow"
+                          : isTargetRow
+                            ? "quotationTargetRowSoft"
+                            : ""
+                      }
+                    >
                       <td>
                         <div className="dateCell">
                           <strong>{formatDisplayDateTime(item.createdAt)}</strong>
