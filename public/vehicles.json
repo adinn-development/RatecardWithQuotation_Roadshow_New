@@ -28,11 +28,10 @@
         "value": "7 days"
       },
       {
-        "label": "Extra Hours",
+        "label": "Extra Hour",
         "value": "₹750 / Hour"
       }
     ],
-    "leastSellingPrice" : [2500],
     "included": [
       "Vehicle rent",
       "Driver bata, food & accommodation",
@@ -41,34 +40,129 @@
       "Basic campaign movement"
     ],
     "addOns": [
-      "43 inch LED TV: Rs. 350/day",
-      "Power backup: Rs. 600/day",
+      "43 inch LED TV: ₹350 / day",
+      "Power backup: ₹650 / day",
       "Up & down if usage < 25 days"
     ],
     "brandingStatus": "Branding cost applicable",
     "locationCharges": [
       {
         "label": "Branding cost",
-        "TamilNadu": "₹8,500",
-        "kerala": "₹10,000",
-        "RoTN": "₹8,500"
-        
+        "general": "₹8,500",
+        "kerala": "₹10,000"
       },
       {
         "label": "RTO Permission",
         "chennai": "₹7,500",
-        "RoTN": "₹5,000",
+        "rotn": "5,000",
         "kerala": "₹22,500",
-        "Andhra Pradesh" : "₹10,000",
-        "Telangana" : "₹10,000",
-        "Karnataka" : "₹10,000"
-      
+        "andhara": "₹10,000",
+        "telungana": "₹10,000",
+        "karnataka": "₹10,000"
       },
       {
         "label": "Promoter",
-        "TamilNadu": "₹1,300",
-        "RoTN": "₹1,700",
-        "kerala": "₹1,850"
+        "Tamilnadu": "₹1,300",
+        "Kerala": "₹1,850",
+        "otherStates": "₹1,700"
+      }
+    ],
+    "variants": [
+      {
+        "id": "60km",
+        "label": "60 km / day",
+        "kmPerDay": 60,
+        "pricePerDay": 3000,
+        "leastSellingPricingPerDay": 2500,
+        "quickSpecs": [
+          {
+            "label": "KM",
+            "value": "60 km/day"
+          },
+          {
+            "label": "Extra KM",
+            "value": "₹12 / km"
+          },
+          {
+            "label": "Minimum",
+            "value": "7 days"
+          },
+          {
+            "label": "Extra Hour",
+            "value": "₹750 / Hour"
+          }
+        ],
+        "included": [
+          "Vehicle rent",
+          "Driver bata, food & accommodation",
+          "Fuel within 60 km/day",
+          "Toll & parking",
+          "Basic campaign movement"
+        ]
+      },
+      {
+        "id": "80km",
+        "label": "80 km / day",
+        "kmPerDay": 80,
+        "pricePerDay": 3500,
+        "leastSellingPricingPerDay": 3000,
+        "quickSpecs": [
+          {
+            "label": "KM",
+            "value": "80 km/day"
+          },
+          {
+            "label": "Extra KM",
+            "value": "₹12 / km"
+          },
+          {
+            "label": "Minimum",
+            "value": "7 days"
+          },
+          {
+            "label": "Extra Hour",
+            "value": "₹750 / Hour"
+          }
+        ],
+        "included": [
+          "Vehicle rent",
+          "Driver bata, food & accommodation",
+          "Fuel within 80 km/day",
+          "Toll & parking",
+          "Basic campaign movement"
+        ]
+      },
+      {
+        "id": "100km",
+        "label": "100 km / day",
+        "kmPerDay": 100,
+        "pricePerDay": 4000,
+        "leastSellingPricingPerDay": 3500,
+        "quickSpecs": [
+          {
+            "label": "KM",
+            "value": "100 km/day"
+          },
+          {
+            "label": "Extra KM",
+            "value": "₹12 / km"
+          },
+          {
+            "label": "Minimum",
+            "value": "7 days"
+          },
+          {
+            "label": "Extra Hour",
+            "value": "₹750 / Hour"
+          }
+        ],
+        "included": [
+          "Vehicle rent",
+          "Driver bata, food & accommodation",
+          "Fuel within 100 km/day",
+          "Toll & parking",
+          "Basic campaign movement"
+        ]
       }
     ]
   },
@@ -78,7 +172,7 @@
     "type": "Standard Flex / Mobile Van",
     "name": "Tata Ace 10 Feet Vehicle",
     "shortDescription": "A slightly larger Tata Ace format for stronger static branding area and better road presence.",
-    "pricePerDay": 4000,
+    "pricePerDay": 3500,
     "packageTotal": "",
     "highlight": "Choose the Flex model that best fits your market activation",
     "images": [
@@ -94,11 +188,15 @@
       },
       {
         "label": "Extra KM",
-        "value": "Rs. 12/km"
+        "value": "₹12 / km"
       },
       {
         "label": "Minimum",
-        "value": "10 days"
+        "value": "7 days"
+      },
+      {
+        "label": "Extra Hour",
+        "value": "₹750 / Hour"
       }
     ],
     "included": [
@@ -110,31 +208,128 @@
     ],
     "addOns": [
       "43 inch LED TV: Rs. 350/day",
-      "Power backup: Rs. 600/day",
+      "Power backup: Rs. 650/day",
       "Up & down if usage < 25 days"
     ],
     "brandingStatus": "Branding cost applicable",
     "locationCharges": [
       {
         "label": "Branding cost",
-        "chennai": "12500",
-        "rotn": "12500",
-        "kerala": "15000",
-        "otherStates": "12500"
+        "general": "₹10,000",
+        "kerala": "₹12,500"
       },
       {
         "label": "RTO Permission",
-        "chennai": "7500",
-        "rotn": "5000",
-        "kerala": "27500",
-        "otherStates": "15000"
+        "chennai": "₹7,500",
+        "rotn": "₹5,000",
+        "kerala": "₹27,500",
+        "andhara": "₹10,000",
+        "telungana": "₹10,000",
+        "karnataka": "10,000"
       },
       {
         "label": "Promoter",
-        "chennai": "1300",
-        "rotn": "1300",
-        "kerala": "1850",
-        "otherStates": "1700"
+        "Tamilnadu": "₹1,300",
+        "Kerala": "₹1,850",
+        "otherStates": "₹1,700"
+      }
+    ],
+    "variants": [
+      {
+        "id": "60km",
+        "label": "60 km / day",
+        "kmPerDay": 60,
+        "pricePerDay": 3500,
+        "leastSellingPricingPerDay": 3000,
+        "quickSpecs": [
+          {
+            "label": "KM",
+            "value": "60 km/day"
+          },
+          {
+            "label": "Extra KM",
+            "value": "₹12 / km"
+          },
+          {
+            "label": "Minimum",
+            "value": "7 days"
+          },
+          {
+            "label": "Extra Hour",
+            "value": "₹750 / Hour"
+          }
+        ],
+        "included": [
+          "Vehicle rent",
+          "Driver bata, food & accommodation",
+          "Fuel within 60 km/day",
+          "Toll & parking",
+          "Basic campaign movement"
+        ]
+      },
+      {
+        "id": "80km",
+        "label": "80 km / day",
+        "kmPerDay": 80,
+        "pricePerDay": 4000,
+        "leastSellingPricingPerDay": 3500,
+        "quickSpecs": [
+          {
+            "label": "KM",
+            "value": "80 km/day"
+          },
+          {
+            "label": "Extra KM",
+            "value": "₹12 / km"
+          },
+          {
+            "label": "Minimum",
+            "value": "7 days"
+          },
+          {
+            "label": "Extra Hour",
+            "value": "₹750 / Hour"
+          }
+        ],
+        "included": [
+          "Vehicle rent",
+          "Driver bata, food & accommodation",
+          "Fuel within 80 km/day",
+          "Toll & parking",
+          "Basic campaign movement"
+        ]
+      },
+      {
+        "id": "100km",
+        "label": "100 km / day",
+        "kmPerDay": 100,
+        "pricePerDay": 4500,
+        "leastSellingPricingPerDay": 4000,
+        "quickSpecs": [
+          {
+            "label": "KM",
+            "value": "100 km/day"
+          },
+          {
+            "label": "Extra KM",
+            "value": "₹12 / km"
+          },
+          {
+            "label": "Minimum",
+            "value": "7 days"
+          },
+          {
+            "label": "Extra Hour",
+            "value": "₹750 / Hour"
+          }
+        ],
+        "included": [
+          "Vehicle rent",
+          "Driver bata, food & accommodation",
+          "Fuel within 100 km/day",
+          "Toll & parking",
+          "Basic campaign movement"
+        ]
       }
     ]
   },
@@ -145,6 +340,7 @@
     "name": "Tata Ultra / Eicher 19 Feet Canter Van",
     "shortDescription": "High-impact canter format for large branding, main-road visibility and innovation models.",
     "pricePerDay": 10000,
+    "leastSellingPricingPerDay": 8500,
     "packageTotal": "",
     "highlight": "Choose the Flex model that best fits your market activation",
     "images": [
@@ -183,26 +379,27 @@
     "locationCharges": [
       {
         "label": "Branding cost",
-        "chennai": "55000",
-        "rotn": "55000",
-        "kerala": "65000",
-        "otherStates": "55000"
+        "general": "10000",
+        "kerala": "12500"
       },
       {
         "label": "RTO Permission",
-        "chennai": "15000",
-        "rotn": "15000",
-        "kerala": "40000",
-        "otherStates": "20000"
+        "chennai": "7500",
+        "rotn": "5000",
+        "kerala": "22000",
+        "andhara": "22000",
+        "telungana": "22000",
+        "karnataka": "22000",
+        "otherStates": "15000"
       },
       {
         "label": "Promoter",
-        "chennai": "1300",
-        "rotn": "1300",
-        "kerala": "1850",
-        "otherStates": "1700"
+        "Tamilnadu": "₹1,300",
+        "Kerala": "₹1,850",
+        "otherStates": "₹1,700"
       }
-    ]
+    ],
+    "hide": true
   },
   {
     "id": 4,
@@ -210,7 +407,8 @@
     "type": "Standard Flex / Mobile Van",
     "name": "Tata Ace 8 Feet LED Vehicle",
     "shortDescription": "Compact LED solution for brands that need video visibility at a controlled budget.",
-    "pricePerDay": 7500,
+    "pricePerDay": 8500,
+    "leastSellingPricingPerDay": 6500,
     "packageTotal": "",
     "highlight": "LED display 7 x 5 ft / 6 x 4 ft, P6 version",
     "images": [
@@ -226,11 +424,15 @@
       },
       {
         "label": "Extra KM",
-        "value": "Rs. 12/km"
+        "value": "₹12 / km"
       },
       {
         "label": "Minimum",
-        "value": "10 days"
+        "value": "7 days"
+      },
+      {
+        "label": "Extra Hour",
+        "value": "₹1000 / Hour"
       }
     ],
     "included": [
@@ -249,34 +451,35 @@
     "locationCharges": [
       {
         "label": "Branding cost",
-        "chennai": "12500",
-        "rotn": "12500",
-        "kerala": "15000",
-        "otherStates": "12500"
+        "general": "₹12,500",
+        "kerala": "₹15,000"
       },
       {
         "label": "RTO Permission",
-        "chennai": "10000",
-        "rotn": "5000",
-        "kerala": "30000",
-        "otherStates": "20000"
+        "chennai": "₹10,000",
+        "rotn": "₹5,000",
+        "kerala": "₹25,000",
+        "andhara": "₹20,000",
+        "telungana": "₹20,000",
+        "karnataka": "₹10,000",
+        "otherStates": "-"
       },
       {
         "label": "Promoter",
-        "chennai": "1300",
-        "rotn": "1300",
-        "kerala": "1850",
-        "otherStates": "1700"
+        "Tamilnadu": "₹1,300",
+        "Kerala": "₹1,850",
+        "otherStates": "₹1,700"
       }
     ]
   },
   {
     "id": 5,
-    "category": "Hybrid LED + Flex",
+    "category": "Premium LED",
     "type": "Premium LED Canter",
     "name": "Tata Ultra 19 Ft Single Side LED",
     "shortDescription": "Premium single-side LED format for strong visual storytelling with large moving display.",
-    "pricePerDay": 15000,
+    "pricePerDay": 17500,
+    "leastSellingPricingPerDay": 15000,
     "packageTotal": "Rs. 1,05,000 for 7 days",
     "highlight": "LED size: Left 17 ft x 8 ft | Backlit Flex Size: Right 19 ft x 8 ft",
     "images": [
@@ -292,11 +495,15 @@
       },
       {
         "label": "Extra KM",
-        "value": "Rs. 22/km"
+        "value": "₹24 / km"
       },
       {
         "label": "Minimum",
-        "value": "7 days"
+        "value": "5 days"
+      },
+      {
+        "label": "Extra Hour",
+        "value": "₹2,000 / Hour"
       }
     ],
     "included": [
@@ -306,7 +513,7 @@
       "40 km/day campaign movement"
     ],
     "addOns": [
-      "Extra km: Rs. 22/km",
+      "Extra km: ₹24 / km",
       "Up & down charges applicable below order value of 1 lakh",
       "Promoter if required"
     ],
@@ -314,10 +521,24 @@
     "locationCharges": [
       {
         "label": "Branding cost",
-        "chennai": "12500",
-        "rotn": "12500",
-        "kerala": "15000",
-        "otherStates": "12500"
+        "general": "-",
+        "kerala": "-"
+      },
+      {
+        "label": "RTO Permission",
+        "chennai": "-",
+        "rotn": "-",
+        "kerala": "₹30,000",
+        "andhara": "₹25,000",
+        "telungana": "₹25,000",
+        "karnataka": "-",
+        "otherStates": "-"
+      },
+      {
+        "label": "Promoter",
+        "Tamilnadu": "₹1,300",
+        "Kerala": "₹1,850",
+        "otherStates": "₹1,700"
       }
     ]
   },
@@ -327,7 +548,8 @@
     "type": "Premium LED Canter",
     "name": "Tata Ultra 19 Ft - 3 Sides LED",
     "shortDescription": "Top visibility LED vehicle for premium roadshows, launches and high-footfall video campaigns.",
-    "pricePerDay": 25000,
+    "pricePerDay": 27500,
+    "leastSellingPricingPerDay": 25000,
     "packageTotal": "Rs. 1,00,000 for 4 days",
     "highlight": "LED size: Left & Right 17.8 ft x 6.8 ft | Back 6.4 ft x 6.8 ft",
     "images": [
@@ -343,11 +565,15 @@
       },
       {
         "label": "Extra KM",
-        "value": "Rs. 22/km"
+        "value": "₹24 / km"
       },
       {
         "label": "Minimum",
-        "value": "4 days"
+        "value": "5 days"
+      },
+      {
+        "label": "Extra Hour",
+        "value": "₹3000 / Hour"
       }
     ],
     "included": [
@@ -357,12 +583,28 @@
       "High-visibility moving video format"
     ],
     "addOns": [
-      "Extra km: Rs. 22/km",
+      "Extra km: ₹24 / km",
       "Up & down charges applicable below order value of 1 lakh",
       "Promoter if required"
     ],
     "brandingStatus": "No branding cost applicable",
-    "locationCharges": []
+    "locationCharges": [
+      {
+        "label": "RTO Permission",
+        "chennai": "-",
+        "rotn": "-",
+        "kerala": "₹50,000",
+        "andhara": "₹25,000",
+        "telungana": "₹25,000",
+        "karnataka": "-"
+      },
+      {
+        "label": "Promoter",
+        "Tamilnadu": "₹1,300",
+        "Kerala": "₹1,850",
+        "otherStates": "₹1,700"
+      }
+    ]
   },
   {
     "id": 7,
@@ -370,7 +612,8 @@
     "type": "Premium LED Canter",
     "name": "Tata Ultra 17 Ft - 3 Sides LED",
     "shortDescription": "Large LED option with strong visibility and slightly smaller format than the 19 ft LED canter.",
-    "pricePerDay": 20000,
+    "pricePerDay": 22500,
+    "leastSellingPricingPerDay": 20000,
     "packageTotal": "Rs. 1,00,000 for 5 days",
     "highlight": "LED size: Left & Right 13.6 ft x 6.8 ft | Back 6.4 ft x 6.8 ft",
     "images": [
@@ -386,11 +629,15 @@
       },
       {
         "label": "Extra KM",
-        "value": "Rs. 22/km"
+        "value": "₹24 / km"
       },
       {
         "label": "Minimum",
         "value": "5 days"
+      },
+      {
+        "label": "Extra Hour",
+        "value": "₹2,500 / Hour"
       }
     ],
     "included": [
@@ -400,12 +647,29 @@
       "High-visibility moving video format"
     ],
     "addOns": [
-      "Extra km: Rs. 22/km",
+      "Extra km: ₹24 / km",
       "Up & down charges applicable below order value of 1 lakh",
       "Promoter if required"
     ],
     "brandingStatus": "No branding cost applicable",
-    "locationCharges": []
+    "locationCharges": [
+      {
+        "label": "RTO Permission",
+        "chennai": "-",
+        "rotn": "-",
+        "kerala": "₹40,000",
+        "andhara": "₹25,000",
+        "telungana": "₹25,000",
+        "karnataka": "-",
+        "otherStates": "-"
+      },
+      {
+        "label": "Promoter",
+        "Tamilnadu": "₹1,300",
+        "Kerala": "₹1,850",
+        "otherStates": "₹1,700"
+      }
+    ]
   },
   {
     "id": 8,
@@ -413,7 +677,8 @@
     "type": "Premium LED Canter",
     "name": "Tata Ace 9 Ft 2 Sides LED",
     "shortDescription": "Flexible LED vehicle for video-led local campaigns in market and city routes.",
-    "pricePerDay": 10000,
+    "pricePerDay": 12500,
+    "leastSellingPricingPerDay": 10000,
     "packageTotal": "Rs. 1,00,000 for 10 days",
     "highlight": "LED size: Left & Right 13.6 ft x 6.8 ft | Back 6.4 ft x 6.8 ft",
     "images": [
@@ -421,6 +686,104 @@
       "/images/tata-ace-9ft-2side-led-2.png",
       "/images/tata-ace-9ft-2side-led-3.png",
       "/images/tata-ace-9ft-2side-led-4.png"
+    ],
+    "quickSpecs": [
+      {
+        "label": "KM",
+        "value": "40 km/day"
+      },
+      {
+        "label": "Extra KM",
+        "value": "₹12 / km"
+      },
+      {
+        "label": "Minimum",
+        "value": "5 days"
+      },
+      {
+        "label": "Extra Hour",
+        "value": "₹1,250 / Hour"
+      }
+    ],
+    "included": [
+      "Tata Ace 9 ft vehicle",
+      "Right-side and back-side LED display",
+      "40 km/day movement",
+      "Compact LED visibility"
+    ],
+    "addOns": [
+      "Extra km: ₹12 / km",
+      "Up & down charges applicable below order value of 1 lakh",
+      "Promoter if required"
+    ],
+    "brandingStatus": "No branding cost applicable",
+    "locationCharges": [
+      {
+        "label": "RTO Permission",
+        "chennai": "-",
+        "rotn": "-",
+        "kerala": "₹25,000",
+        "andhara": "₹15,000",
+        "telungana": "₹15,000",
+        "karnataka": "-"
+      },
+      {
+        "label": "Promoter",
+        "Tamilnadu": "₹1,300",
+        "Kerala": "₹1,850",
+        "otherStates": "₹1,700"
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "category": "Innovative Model",
+    "type": "Custom Fabrication",
+    "name": "Tata Ace 8 Feet Vehicle - Innovative Fabrication",
+    "shortDescription": "Custom fabricated format for innovative branding concepts.",
+    "pricePerDay": 3000,
+    "packageTotal": "",
+    "highlight": "Pricing entered manually per design",
+    "images": [
+      "/images/tata-ace-8ft-flex-1.png"
+    ],
+    "quickSpecs": [
+      {
+        "label": "KM",
+        "value": "40 km/day"
+      },
+      {
+        "label": "Extra KM",
+        "value": "Rs. 12/km"
+      },
+      {
+        "label": "Minimum",
+        "value": "10 days"
+      },
+      {
+        "label": "Extra Hours",
+        "value": "₹750 / Hour"
+      }
+    ],
+    "included": [
+      "Vehicle rent",
+      "Driver bata, food & accommodation"
+    ],
+    "addOns": [],
+    "brandingStatus": "Fabrication cost applicable",
+    "locationCharges": []
+  },
+  {
+    "id": 10,
+    "category": "Innovative Model",
+    "type": "Custom Fabrication",
+    "name": "Tata Ace 10 Feet Vehicle  - Innovative Fabrication",
+    "shortDescription": "Custom fabricated format for innovative branding concepts with a larger surface.",
+    "pricePerDay": 3500,
+    "packageTotal": "",
+    "highlight": "Pricing entered manually per design",
+    "images": [
+      "/images/tata-ace-10ft-flex-1.png"
     ],
     "quickSpecs": [
       {
@@ -437,63 +800,26 @@
       }
     ],
     "included": [
-      "Tata Ace 9 ft vehicle",
-      "Right-side and back-side LED display",
-      "40 km/day movement",
-      "Compact LED visibility"
+      "Vehicle rent",
+      "Driver bata, food & accommodation"
     ],
-    "addOns": [
-      "Extra km: Rs. 12/km",
-      "Up & down charges applicable below order value of 1 lakh",
-      "Promoter if required"
-    ],
-    "brandingStatus": "No branding cost applicable",
+    "addOns": [],
+    "brandingStatus": "Fabrication cost applicable",
     "locationCharges": []
   },
-   {
-  "id": 9,
-  "category": "Innovative Model",
-  "type": "Custom Fabrication",
-  "name": "Tata Ace 8 Feet Vehicle - Innovative Fabrication",
-  "shortDescription": "Custom fabricated format for innovative branding concepts.",
-  "pricePerDay": 2000,
-  "packageTotal": "",
-  "highlight": "Pricing entered manually per design",
-  "images": ["/images/tata-ace-8ft-flex-1.png"],
-  "quickSpecs": [
-      {
-        "label": "KM",
-        "value": "40 km/day"
-      },
-      {
-        "label": "Extra KM",
-        "value": "Rs. 12/km"
-      },
-      {
-        "label": "Minimum",
-        "value": "10 days"
-      },
-       {
-        "label": "Extra Hours",
-        "value": "₹750 / Hour"
-      }
+  {
+    "id": 11,
+    "category": "Innovative Model",
+    "type": "Custom Fabrication",
+    "name": "Tata Ultra 19 Feet  - Innovative Fabrication",
+    "shortDescription": "Large-format canter for high-impact custom innovation builds.",
+    "pricePerDay": 10000,
+    "packageTotal": "",
+    "highlight": "Pricing entered manually per design",
+    "images": [
+      "/images/tata-ultra-19ft-3side-led-1.png"
     ],
-  "included": ["Vehicle rent", "Driver bata, food & accommodation"],
-  "addOns": [],
-  "brandingStatus": "Fabrication cost applicable",
-  "locationCharges": []
-},
-{
-  "id": 10,
-  "category": "Innovative Model",
-  "type": "Custom Fabrication",
-  "name": "Tata Ace 10 Feet Vehicle  - Innovative Fabrication",
-  "shortDescription": "Custom fabricated format for innovative branding concepts with a larger surface.",
-  "pricePerDay": 1220,
-  "packageTotal": "",
-  "highlight": "Pricing entered manually per design",
-  "images": ["/images/tata-ace-10ft-flex-1.png"],
-  "quickSpecs": [
+    "quickSpecs": [
       {
         "label": "KM",
         "value": "40 km/day"
@@ -507,38 +833,23 @@
         "value": "10 days"
       }
     ],
-  "included": ["Vehicle rent", "Driver bata, food & accommodation"],
-  "addOns": [],
-  "brandingStatus": "Fabrication cost applicable",
-  "locationCharges": []
-},
-{
-  "id": 11,
-  "category": "Innovative Model",
-  "type": "Custom Fabrication",
-  "name": "Tata Ultra 19 Feet  - Innovative Fabrication",
-  "shortDescription": "Large-format canter for high-impact custom innovation builds.",
-  "pricePerDay": 3000,
-  "packageTotal": "",
-  "highlight": "Pricing entered manually per design",
-  "images": ["/images/tata-ultra-19ft-3side-led-1.png"],
-  "quickSpecs": [
-      {
-        "label": "KM",
-        "value": "40 km/day"
-      },
-      {
-        "label": "Extra KM",
-        "value": "Rs. 12/km"
-      },
-      {
-        "label": "Minimum",
-        "value": "10 days"
-      }
+    "included": [
+      "Vehicle rent",
+      "Driver bata, food & accommodation"
     ],
-  "included": ["Vehicle rent", "Driver bata, food & accommodation"],
-  "addOns": [],
-  "brandingStatus": "Fabrication cost applicable",
-  "locationCharges": []
-}
+    "addOns": [],
+    "brandingStatus": "Fabrication cost applicable",
+    "locationCharges": []
+  },
+  {
+    "promoterCharges": [
+      {
+        "Tamilnadu": {
+          "chennai": 1300
+        },
+        "Kerala": 1850,
+        "Other State": 1700
+      }
+    ]
+  }
 ]

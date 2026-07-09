@@ -49,7 +49,7 @@ const PREPARED_BY_DEFAULTS = {
   gstNumber: DEFAULT_PREPARED_BY_GST,
 };
 
-const ENABLE_PREFILLED_QUOTATION_VALUES = true; // set true to auto-load the sample quotation values below
+const ENABLE_PREFILLED_QUOTATION_VALUES = false; // set true to auto-load the sample quotation values below
 
 const PREFILLED_QUOTATION_VALUES = {
   clientDetails: {
