@@ -10,7 +10,7 @@ import { Link, useNavigate } from "react-router-dom";
 const LOGO_SRC = "/adinn-logo.png";
 
 const VEHICLES_JSON_URL =
-  "./vehicles.json";
+  "https://adinn-space.sgp1.cdn.digitaloceanspaces.com/roadshowRateCard/vehicles.json";
 
 const USE_LOCAL_API = false; // set true for local, false for live
 const API_BASE_URL = USE_LOCAL_API
@@ -19,7 +19,7 @@ const API_BASE_URL = USE_LOCAL_API
 
 const ROADSHOW_QUOTATION_API_URL = `${API_BASE_URL}/api/roadshow-quotations`;
 
-const CATEGORY_ORDER = ["Flex Branding", "Hybrid LED + Flex", "LED Vehicles","Innovative Model",];
+const CATEGORY_ORDER = ["Flex Branding", "Hybrid LED + Flex", "LED Vehicles"];
 
 const LED_TV_ADDON_RATE_PER_DAY = 350;
 const POWER_BACKUP_ADDON_RATE_PER_DAY = 650;
@@ -49,7 +49,7 @@ const PREPARED_BY_DEFAULTS = {
   gstNumber: DEFAULT_PREPARED_BY_GST,
 };
 
-const ENABLE_PREFILLED_QUOTATION_VALUES = true; // set true to auto-load the sample quotation values below
+const ENABLE_PREFILLED_QUOTATION_VALUES = false; // set true to auto-load the sample quotation values below
 
 const PREFILLED_QUOTATION_VALUES = {
   clientDetails: {
@@ -392,7 +392,6 @@ const normalizeImageFileToDataUrl = async (file: File) => {
 const normalizeCategory = (category: string) => {
   if (category === "LED Vehicle") return "Hybrid LED + Flex";
   if (category === "Premium LED") return "LED Vehicles";
-  if (category === "Innovative Model") return "Innovative Model";
   return category;
 };
 
@@ -1198,12 +1197,6 @@ export default function RoadshowQO() {
   const [includeLed, setIncludeLed] = useState(false);
   const [includePowerBackup, setIncludePowerBackup] = useState(false);
 
-  const [customAddOns, setCustomAddOns] = useState<
-    { id: string; name: string; price: string }[]
-  >([{ id: "addon-1", name: "", price: "" }]);
-
-  const customAddOnIdCounterRef = useRef(1);
-
   const [uploadedLogo, setUploadedLogo] = useState("");
   const [pdfLogoSrc, setPdfLogoSrc] = useState("");
   const [signatureSource, setSignatureSource] = useState("");
@@ -1456,17 +1449,11 @@ export default function RoadshowQO() {
     selectedVehicleMaxRate - selectedVehicleLeastSellingRate,
     0,
   );
-  // const canShowLedAndPowerAddOns = ![
-  //   "Hybrid LED + Flex",
-  //   "LED Vehicles",
-  // ].includes(selectedCategory);
-  // const canEditRtoPermission = region === "otherStates";
   const canShowLedAndPowerAddOns = ![
     "Hybrid LED + Flex",
     "LED Vehicles",
   ].includes(selectedCategory);
-  const isInnovativeModel = selectedCategory === "Innovative Model";
-  const canEditRtoPermission = region === "otherStates" || isInnovativeModel;
+  const canEditRtoPermission = region === "otherStates";
   const canShowBrandingCostDiscount = selectedCategory !== "LED Vehicles";
   const canShowRtoPermissionDiscount = Number(pricingDetails.rtoPermission || 0) !== 0;
   const otherStateNameLabel = otherStateName.trim();
@@ -1600,27 +1587,9 @@ export default function RoadshowQO() {
     vehicleDiscountAmountValue = vehicleDiscountAmount,
     brandingCostDiscountValue = brandingCostDiscount,
     rtoPermissionDiscountValue = rtoPermissionDiscount,
-  //   extraKmValue = extraKm,
-  //   extraHoursValue = extraHours,
-  //   upDownKmValue = upDownKm,
-  // }: {
-  //   pricingValue?: PricingDetails;
-  //   quantityValue?: number;
-  //   daysValue?: number;
-  //   promoterQuantityValue?: number;
-  //   promoterDaysValue?: number;
-  //   rtoBillingMonthsValue?: number;
-  //   vehicleDiscountAmountValue?: number;
-  //   brandingCostDiscountValue?: number;
-  //   rtoPermissionDiscountValue?: number;
-  //   extraKmValue?: number;
-  //   extraHoursValue?: number;
-  //   upDownKmValue?: number;
-  // } = {}) => {
-  extraKmValue = extraKm,
+    extraKmValue = extraKm,
     extraHoursValue = extraHours,
     upDownKmValue = upDownKm,
-    customAddOnsValue = customAddOns,
   }: {
     pricingValue?: PricingDetails;
     quantityValue?: number;
@@ -1634,7 +1603,6 @@ export default function RoadshowQO() {
     extraKmValue?: number;
     extraHoursValue?: number;
     upDownKmValue?: number;
-    customAddOnsValue?: { id: string; name: string; price: string }[];
   } = {}) => {
     const effectivePowerBackupRate =
       pricingValue.powerBackup > 0
@@ -1720,36 +1688,20 @@ export default function RoadshowQO() {
         actualAmount: actualVehicleAmount,
         discountAmount: vehicleDiscountAmount,
       },
-      // {
-      //   label: "Branding Cost",
-      //   description: `${selectedRegionLabel} vehicle branding production and application support`,
-      //   rateLabel: `${formatPrice(pricingValue.brandingCost)} / vehicle`,
-      //   periodLabel: "One-time",
-      //   quantityLabel: `${quantityValue}`,
-      //   formulaLabel: `${formatPrice(pricingValue.brandingCost)} × ${quantityValue} vehicle(s)`,
-      //   amount: brandingFinalAmount,
-      //   actualRate: pricingValue.brandingCost,
-      //   finalRate: Math.max(pricingValue.brandingCost, 0),
-      //   discountRate: brandingDiscountAmount,
-      //   actualAmount: brandingActualAmount,
-      //   discountAmount: brandingDiscountAmount,
-      // },
       {
-  label: isInnovativeModel ? "Fabrication Cost" : "Branding Cost",
-  description: isInnovativeModel
-    ? `${selectedRegionLabel} fabrication production and application support`
-    : `${selectedRegionLabel} vehicle branding production and application support`,
-  rateLabel: `${formatPrice(pricingValue.brandingCost)} / vehicle`,
-  periodLabel: "One-time",
-  quantityLabel: `${quantityValue}`,
-  formulaLabel: `${formatPrice(pricingValue.brandingCost)} × ${quantityValue} vehicle(s)`,
-  amount: brandingFinalAmount,
-  actualRate: pricingValue.brandingCost,
-  finalRate: Math.max(pricingValue.brandingCost, 0),
-  discountRate: brandingDiscountAmount,
-  actualAmount: brandingActualAmount,
-  discountAmount: brandingDiscountAmount,
-},
+        label: "Branding Cost",
+        description: `${selectedRegionLabel} vehicle branding production and application support`,
+        rateLabel: `${formatPrice(pricingValue.brandingCost)} / vehicle`,
+        periodLabel: "One-time",
+        quantityLabel: `${quantityValue}`,
+        formulaLabel: `${formatPrice(pricingValue.brandingCost)} × ${quantityValue} vehicle(s)`,
+        amount: brandingFinalAmount,
+        actualRate: pricingValue.brandingCost,
+        finalRate: Math.max(pricingValue.brandingCost, 0),
+        discountRate: brandingDiscountAmount,
+        actualAmount: brandingActualAmount,
+        discountAmount: brandingDiscountAmount,
+      },
       {
         label: "RTO Permission",
         description: `Monthly ${selectedRegionLabel} Permission Charges.`,
@@ -1845,27 +1797,6 @@ export default function RoadshowQO() {
       });
     }
 
-
-    if (isInnovativeModel) {
-      customAddOnsValue
-        .filter(
-          (addon) => addon.name.trim() && Number(addon.price || 0) > 0,
-        )
-        .forEach((addon) => {
-          const addonPrice = Number(addon.price || 0);
-
-          items.push({
-            label: addon.name.trim(),
-            description: "Custom add-on for innovative build",
-            rateLabel: `${formatPrice(addonPrice)}`,
-            periodLabel: "One-time",
-            quantityLabel: "1",
-            formulaLabel: `${formatPrice(addonPrice)} flat`,
-            amount: addonPrice,
-          });
-        });
-    }
-
     return items.filter(
       (item) =>
         item.amount > 0 ||
@@ -1888,7 +1819,6 @@ export default function RoadshowQO() {
       extraKmValue: extraKm,
       extraHoursValue: extraHours,
       upDownKmValue: upDownKm,
-      customAddOnsValue: customAddOns,
     });
   }, [
     selectedVehicle,
@@ -1917,8 +1847,6 @@ export default function RoadshowQO() {
     extraKmRate,
     extraHourRate,
     upDownRatePerKm,
-    isInnovativeModel,
-    customAddOns,
   ]);
 
   const subtotal = useMemo(() => {
@@ -1969,14 +1897,6 @@ export default function RoadshowQO() {
       addOns.push("Power backup");
     }
 
-      if (isInnovativeModel) {
-      customAddOns
-        .filter((addon) => addon.name.trim() && Number(addon.price || 0) > 0)
-        .forEach((addon) => {
-          addOns.push(`${addon.name.trim()} (${formatPrice(Number(addon.price))})`);
-        });
-    }
-
     return addOns.length ? addOns : ["No optional add-ons selected"];
   }, [
     includePromoter,
@@ -1985,8 +1905,6 @@ export default function RoadshowQO() {
     canShowLedAndPowerAddOns,
     promoterQuantity,
     promoterDays,
-    isInnovativeModel,
-    customAddOns,
   ]);
 
   const isCompactProposal = quoteLineItems.length >= 6;
@@ -2004,24 +1922,6 @@ export default function RoadshowQO() {
 
   const clearSavedQuotation = () => {
     setActiveQuotationMeta(null);
-  };
-
-  const validateMandatoryStaffEmail = (actionLabel: string) => {
-    const staffEmail = preparedByDetails.email.trim();
-
-    if (!staffEmail) {
-      showTopMessage(`Staff email ID is required before ${actionLabel}.`);
-      return false;
-    }
-
-    const isValidStaffEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(staffEmail);
-
-    if (!isValidStaffEmail) {
-      showTopMessage(`Please enter a valid staff email ID before ${actionLabel}.`);
-      return false;
-    }
-
-    return true;
   };
 
   const loadPrefilledQuotationValues = () => {
@@ -2117,11 +2017,6 @@ export default function RoadshowQO() {
       setIncludeLed(false);
       setIncludePowerBackup(false);
       setAddOnMessage("");
-    }
-
-    if (category !== "Innovative Model") {
-      customAddOnIdCounterRef.current = 1;
-      setCustomAddOns([{ id: "addon-1", name: "", price: "" }]);
     }
 
     const firstVehicle = getVisibleVehicles(vehicles).find(
@@ -2686,54 +2581,8 @@ export default function RoadshowQO() {
     }
   };
 
-  // const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   clearSavedQuotation();
-  const handleCustomAddOnNameChange = (id: string, value: string) => {
-    clearSavedQuotation();
-    setCustomAddOns((current) =>
-      current.map((addon) =>
-        addon.id === id ? { ...addon, name: value } : addon,
-      ),
-    );
-  };
-
-  const handleCustomAddOnPriceChange = (id: string, value: string) => {
-    clearSavedQuotation();
-    const digitsOnly = sanitizeNumberText(value);
-    setCustomAddOns((current) =>
-      current.map((addon) =>
-        addon.id === id ? { ...addon, price: digitsOnly } : addon,
-      ),
-    );
-  };
-
-  const handleAddCustomAddOnRow = () => {
-    clearSavedQuotation();
-    customAddOnIdCounterRef.current += 1;
-    setCustomAddOns((current) => [
-      ...current,
-      {
-        id: `addon-${customAddOnIdCounterRef.current}`,
-        name: "",
-        price: "",
-      },
-    ]);
-  };
-
-  const handleRemoveCustomAddOnRow = (id: string) => {
-    clearSavedQuotation();
-    setCustomAddOns((current) => {
-      if (current.length <= 1) {
-        return current.map((addon) =>
-          addon.id === id ? { ...addon, name: "", price: "" } : addon,
-        );
-      }
-
-      return current.filter((addon) => addon.id !== id);
-    });
-  };
-
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    clearSavedQuotation();
 
     const file = event.target.files?.[0];
 
@@ -2957,7 +2806,6 @@ export default function RoadshowQO() {
       extraKm?: number;
       extraHours?: number;
       upDownKm?: number;
-      customAddOns?: { id: string; name: string; price: string }[];
     } = {},
   ) => {
     const effectiveQuantity = overrides.quantity ?? quantity;
@@ -2999,7 +2847,6 @@ export default function RoadshowQO() {
         extraKmValue: effectiveExtraKm,
         extraHoursValue: effectiveExtraHours,
         upDownKmValue: effectiveUpDownKm,
-        customAddOnsValue: overrides.customAddOns ?? customAddOns,
       });
     const effectiveSubtotal =
       overrides.subtotal ??
@@ -3665,10 +3512,6 @@ export default function RoadshowQO() {
       return;
     }
 
-    if (!validateMandatoryStaffEmail("submitting approval")) {
-      return;
-    }
-
     const hasApprovalDiscount =
       (normalizedQuoteValues.brandingCostDiscount || 0) > 0 ||
       (normalizedQuoteValues.rtoPermissionDiscount || 0) > 0;
@@ -3751,10 +3594,6 @@ export default function RoadshowQO() {
 
     if (!clientDetails.companyName.trim()) {
       showTopMessage("Client company name is required before downloading PDF.");
-      return;
-    }
-
-    if (!validateMandatoryStaffEmail("downloading PDF")) {
       return;
     }
 
@@ -3915,34 +3754,25 @@ export default function RoadshowQO() {
               <div className="qoLoading">Loading vehicle categories...</div>
             ) : (
               <div className="qoOptionGrid three">
-               {categories.map((category) => {
-  // console.log(category);
-
-  return (
-    <button
-      key={category}
-      type="button"
-      className={`qoSelectCard ${
-        selectedCategory === category ? "active" : ""
-      }`}
-      onClick={() => handleCategorySelect(category)}
-    >
-      <strong>{category}</strong>
-
-      <span>
-        {category === "Flex Branding"
-          ? "Traditional flex-branding vehicles."
-          : category === "Hybrid LED + Flex"
-          ? "LED screen with flex branding."
-          : category === "LED Vehicles"
-          ? "High-impact full LED vehicles."
-          : category === "Innovative Model"
-          ? "High-impacts innovative model vehicles."
-          : "Custom fabrication & innovative builds."}
-      </span>
-    </button>
-  );
-})}
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    className={`qoSelectCard ${
+                      selectedCategory === category ? "active" : ""
+                    }`}
+                    onClick={() => handleCategorySelect(category)}
+                  >
+                    <strong>{category}</strong>
+                    <span>
+                      {category === "Flex Branding"
+                        ? "Traditional flex-branding vehicles."
+                        : category === "Hybrid LED + Flex"
+                          ? "LED screen with flex branding."
+                          : "High-impact full LED vehicles."}
+                    </span>
+                  </button>
+                ))}
               </div>
             )}
           </section>
@@ -4376,17 +4206,14 @@ export default function RoadshowQO() {
               </label>
 
               <label>
-                Email ID 
+                Email ID
                 <input
                   type="email"
                   value={preparedByDetails.email}
-                  required
-                  aria-required="true"
                   onChange={(event) =>
                     handlePreparedByChange("email", event.target.value)
                   }
                 />
-                <small>Required before submitting approval or downloading PDF.</small>
               </label>
 
               <label className="fullWidth">
@@ -4826,7 +4653,7 @@ export default function RoadshowQO() {
                 </small>
               </label>
 
-              {/* <label>
+              <label>
                 Branding Cost ({selectedRegionLabel})
                 <div className="moneyInput">
                   <span>Rs.</span>
@@ -4840,29 +4667,6 @@ export default function RoadshowQO() {
                   />
                 </div>
                 <small>Auto-loaded from selected vehicle and region.</small>
-              </label> */}
-              <label>
-                {isInnovativeModel ? "Fabrication Cost" : "Branding Cost"} ({selectedRegionLabel})
-                <div className="moneyInput">
-                  <span>Rs.</span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={pricingDetails.brandingCost}
-                    readOnly={!isInnovativeModel}
-                    disabled={!isInnovativeModel}
-                    onChange={(event) => {
-                      if (!isInnovativeModel) return;
-                      handlePricingChange("brandingCost", event.target.value);
-                    }}
-                  />
-                </div>
-                <small>
-                  {isInnovativeModel
-                    ? "Enter the fabrication cost manually for this custom build."
-                    : "Auto-loaded from selected vehicle and region."}
-                </small>
               </label>
 
               {canShowBrandingCostDiscount && (
@@ -4904,17 +4708,10 @@ export default function RoadshowQO() {
                     }}
                   />
                 </div>
-                {/* <small>
+                <small>
                   {canEditRtoPermission
                     ? "Editable for Other States. This value updates the RTO Permission line item in the quotation table."
                     : "Locked. Auto-loaded from selected vehicle and region."}
-                </small> */}
-                <small>
-                  {isInnovativeModel
-                    ? "Enter the RTO permission cost manually for this custom build."
-                    : canEditRtoPermission
-                      ? "Editable for Other States. This value updates the RTO Permission line item in the quotation table."
-                      : "Locked. Auto-loaded from selected vehicle and region."}
                 </small>
               </label>
 
@@ -5008,7 +4805,6 @@ export default function RoadshowQO() {
             </div>
 
             <div className="qoAddonSuite">
-              {!isInnovativeModel && (
               <div
                 className={`qoPromoterSetup ${includePromoter ? "active" : ""}`}
               >
@@ -5081,9 +4877,8 @@ export default function RoadshowQO() {
                   </div>
                 )}
               </div>
-             )}
 
-              {canShowLedAndPowerAddOns && !isInnovativeModel && (
+              {canShowLedAndPowerAddOns && (
                 <div className="qoAddonOptionsGrid">
                   <label
                     className={`qoAddon qoAddonCard ${includeLed ? "active" : ""}`}
@@ -5131,87 +4926,6 @@ export default function RoadshowQO() {
                       </small>
                     </span>
                   </label>
-                </div>
-              )}
-
-                  {isInnovativeModel && (
-                <div className="qoCustomAddonBuilder">
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr 40px",
-                      gap: "10px",
-                      marginBottom: "8px",
-                      fontWeight: 700,
-                      fontSize: "13px",
-                      color: "#475569",
-                    }}
-                  >
-                    <span>Addon Name</span>
-                    <span>Price</span>
-                    <span></span>
-                  </div>
-
-                  {customAddOns.map((addon) => (
-                    <div
-                      key={addon.id}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr 40px",
-                        gap: "10px",
-                        marginBottom: "10px",
-                        alignItems: "center",
-                      }}
-                    >
-                     <div className="moneyInput addonNameInput">
-  <input
-    type="text"
-    placeholder="e.g. Custom Addons"
-    value={addon.name}
-    onChange={(event) =>
-      handleCustomAddOnNameChange(
-        addon.id,
-        event.target.value,
-      )
-    }
-  />
-</div>
-
-                      <div className="moneyInput">
-                        <span>Rs.</span>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          placeholder="0"
-                          value={addon.price}
-                          onChange={(event) =>
-                            handleCustomAddOnPriceChange(
-                              addon.id,
-                              event.target.value,
-                            )
-                          }
-                        />
-                      </div>
-
-                      <button
-                        type="button"
-                        className="smallBtn dangerBtn"
-                        onClick={() => handleRemoveCustomAddOnRow(addon.id)}
-                        aria-label="Remove add-on row"
-                      >
-                        −
-                      </button>
-                    </div>
-                  ))}
-
-                  <button
-                    type="button"
-                    className="smallBtn"
-                    onClick={handleAddCustomAddOnRow}
-                  >
-                    + Add Add-on
-                  </button>
                 </div>
               )}
 
