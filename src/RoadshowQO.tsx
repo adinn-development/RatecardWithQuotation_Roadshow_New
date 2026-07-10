@@ -13,7 +13,7 @@ const LOGO_SRC = "/adinn-logo.png";
 //   "https://adinn-space.sgp1.cdn.digitaloceanspaces.com/roadshowRateCard/vehicles.json";
 
 
-const USE_LOCAL_JSON = true; // set true for local, false for live
+const USE_LOCAL_JSON = false; // set true for local, false for live
 const VEHICLES_JSON_URL = USE_LOCAL_JSON
   ? "./vehicles.json"
   : "https://adinn-space.sgp1.cdn.digitaloceanspaces.com/roadshowRateCard/vehicles.json";
