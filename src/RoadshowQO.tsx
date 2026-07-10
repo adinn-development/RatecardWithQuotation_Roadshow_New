@@ -9,8 +9,14 @@ import "./RoadshowQOWatermark.css";
 import { Link, useNavigate } from "react-router-dom";
 const LOGO_SRC = "/adinn-logo.png";
 
-const VEHICLES_JSON_URL =
-  "https://adinn-space.sgp1.cdn.digitaloceanspaces.com/roadshowRateCard/vehicles.json";
+// const VEHICLES_JSON_URL =
+//   "https://adinn-space.sgp1.cdn.digitaloceanspaces.com/roadshowRateCard/vehicles.json";
+
+
+const USE_LOCAL_JSON = true; // set true for local, false for live
+const VEHICLES_JSON_URL = USE_LOCAL_JSON
+  ? "./vehicles.json"
+  : "https://adinn-space.sgp1.cdn.digitaloceanspaces.com/roadshowRateCard/vehicles.json";
 
 const USE_LOCAL_API = false; // set true for local, false for live
 const API_BASE_URL = USE_LOCAL_API
@@ -19,7 +25,7 @@ const API_BASE_URL = USE_LOCAL_API
 
 const ROADSHOW_QUOTATION_API_URL = `${API_BASE_URL}/api/roadshow-quotations`;
 
-const CATEGORY_ORDER = ["Flex Branding", "Hybrid LED + Flex", "LED Vehicles"];
+const CATEGORY_ORDER = ["Flex Branding", "Hybrid LED + Flex", "LED Vehicles", "Innovative Model",];
 
 const LED_TV_ADDON_RATE_PER_DAY = 350;
 const POWER_BACKUP_ADDON_RATE_PER_DAY = 650;
@@ -49,7 +55,7 @@ const PREPARED_BY_DEFAULTS = {
   gstNumber: DEFAULT_PREPARED_BY_GST,
 };
 
-const ENABLE_PREFILLED_QUOTATION_VALUES = false; // set true to auto-load the sample quotation values below
+const ENABLE_PREFILLED_QUOTATION_VALUES = true; // set true to auto-load the sample quotation values below
 
 const PREFILLED_QUOTATION_VALUES = {
   clientDetails: {
@@ -577,9 +583,8 @@ const getVehicleCardSubtitle = (vehicle: Vehicle) => {
 
   const packageDetails = getPackageDetails(vehicle);
 
-  return `${formatPrice(vehicle.pricePerDay || 0)} /day · ${
-    packageDetails.kmLimit
-  } km/day · Min ${packageDetails.minimumDays}d`;
+  return `${formatPrice(vehicle.pricePerDay || 0)} /day · ${packageDetails.kmLimit
+    } km/day · Min ${packageDetails.minimumDays}d`;
 };
 
 const getVehicleRate = (
@@ -588,12 +593,42 @@ const getVehicleRate = (
 ) => {
   return variant?.pricePerDay || vehicle?.pricePerDay || 0;
 };
+// const getVehicleLeastSellingRate = (
+//   vehicle: Vehicle | undefined,
+//   variant?: VehicleVariant,
+// ) => {
+//   const baseRate = getVehicleRate(vehicle, variant);
+//   const rawLeastSellingRate =
+//     variant?.leastSellingPricingPerDay ??
+//     vehicle?.leastSellingPricingPerDay ??
+//     baseRate;
+
+//   const leastSellingRate = Number(rawLeastSellingRate);
+
+//   if (!Number.isFinite(leastSellingRate) || leastSellingRate <= 0) {
+//     return baseRate;
+//   }
+
+//   if (baseRate > 0 && leastSellingRate > baseRate) {
+//     return baseRate;
+//   }
+
+//   return leastSellingRate;
+// };
 
 const getVehicleLeastSellingRate = (
   vehicle: Vehicle | undefined,
   variant?: VehicleVariant,
 ) => {
   const baseRate = getVehicleRate(vehicle, variant);
+
+  // No LSP configured yet (currently true for Innovative Model vehicles).
+  // Keep the discount range fully open (0 → full rate) until real LSP data
+  // is added to vehicles.json for these items.
+  if (!hasConfiguredLeastSellingPrice(vehicle, variant)) {
+    return 0;
+  }
+
   const rawLeastSellingRate =
     variant?.leastSellingPricingPerDay ??
     vehicle?.leastSellingPricingPerDay ??
@@ -611,7 +646,28 @@ const getVehicleLeastSellingRate = (
 
   return leastSellingRate;
 };
+// DISCOUNT HANDLED 
 
+const hasConfiguredLeastSellingPrice = (
+  vehicle: Vehicle | undefined,
+  variant?: VehicleVariant,
+) => {
+  const rawLeastSellingRate =
+    variant?.leastSellingPricingPerDay ?? vehicle?.leastSellingPricingPerDay;
+
+  if (
+    rawLeastSellingRate === undefined ||
+    rawLeastSellingRate === null ||
+    rawLeastSellingRate === ""
+  ) {
+    return false;
+  }
+
+  const parsedRate = Number(rawLeastSellingRate);
+
+  return Number.isFinite(parsedRate) && parsedRate > 0;
+};
+// DISCOUNT HANDLED
 const getAllowedVehicleRateRange = (
   vehicle: Vehicle | undefined,
   variant?: VehicleVariant,
@@ -1197,6 +1253,12 @@ export default function RoadshowQO() {
   const [includeLed, setIncludeLed] = useState(false);
   const [includePowerBackup, setIncludePowerBackup] = useState(false);
 
+  const [customAddOns, setCustomAddOns] = useState<
+    { id: string; name: string; price: string }[]
+  >([{ id: "addon-1", name: "", price: "" }]);
+
+  const customAddOnIdCounterRef = useRef(1);
+
   const [uploadedLogo, setUploadedLogo] = useState("");
   const [pdfLogoSrc, setPdfLogoSrc] = useState("");
   const [signatureSource, setSignatureSource] = useState("");
@@ -1449,11 +1511,21 @@ export default function RoadshowQO() {
     selectedVehicleMaxRate - selectedVehicleLeastSellingRate,
     0,
   );
+  const selectedVehicleHasLeastSellingPrice = hasConfiguredLeastSellingPrice(
+    selectedVehicle,
+    selectedVehicleVariant,
+  );
+  // const canShowLedAndPowerAddOns = ![
+  //   "Hybrid LED + Flex",
+  //   "LED Vehicles",
+  // ].includes(selectedCategory);
+  // const canEditRtoPermission = region === "otherStates";
   const canShowLedAndPowerAddOns = ![
     "Hybrid LED + Flex",
     "LED Vehicles",
   ].includes(selectedCategory);
-  const canEditRtoPermission = region === "otherStates";
+  const isInnovativeModel = selectedCategory === "Innovative Model";
+  const canEditRtoPermission = region === "otherStates" || isInnovativeModel;
   const canShowBrandingCostDiscount = selectedCategory !== "LED Vehicles";
   const canShowRtoPermissionDiscount = Number(pricingDetails.rtoPermission || 0) !== 0;
   const otherStateNameLabel = otherStateName.trim();
@@ -1587,9 +1659,27 @@ export default function RoadshowQO() {
     vehicleDiscountAmountValue = vehicleDiscountAmount,
     brandingCostDiscountValue = brandingCostDiscount,
     rtoPermissionDiscountValue = rtoPermissionDiscount,
+    //   extraKmValue = extraKm,
+    //   extraHoursValue = extraHours,
+    //   upDownKmValue = upDownKm,
+    // }: {
+    //   pricingValue?: PricingDetails;
+    //   quantityValue?: number;
+    //   daysValue?: number;
+    //   promoterQuantityValue?: number;
+    //   promoterDaysValue?: number;
+    //   rtoBillingMonthsValue?: number;
+    //   vehicleDiscountAmountValue?: number;
+    //   brandingCostDiscountValue?: number;
+    //   rtoPermissionDiscountValue?: number;
+    //   extraKmValue?: number;
+    //   extraHoursValue?: number;
+    //   upDownKmValue?: number;
+    // } = {}) => {
     extraKmValue = extraKm,
     extraHoursValue = extraHours,
     upDownKmValue = upDownKm,
+    customAddOnsValue = customAddOns,
   }: {
     pricingValue?: PricingDetails;
     quantityValue?: number;
@@ -1603,6 +1693,7 @@ export default function RoadshowQO() {
     extraKmValue?: number;
     extraHoursValue?: number;
     upDownKmValue?: number;
+    customAddOnsValue?: { id: string; name: string; price: string }[];
   } = {}) => {
     const effectivePowerBackupRate =
       pricingValue.powerBackup > 0
@@ -1666,7 +1757,7 @@ export default function RoadshowQO() {
       pricingValue.rtoPermission * rtoBillingMonthsValue * quantityValue;
     const rtoDiscountAmount = Math.min(
       Math.max(Number(effectiveRtoPermissionDiscountValue) || 0, 0) *
-        rtoBillingMonthsValue,
+      rtoBillingMonthsValue,
       rtoActualAmount,
     );
     const rtoFinalAmount = Math.max(rtoActualAmount - rtoDiscountAmount, 0);
@@ -1689,8 +1780,10 @@ export default function RoadshowQO() {
         discountAmount: vehicleDiscountAmount,
       },
       {
-        label: "Branding Cost",
-        description: `${selectedRegionLabel} vehicle branding production and application support`,
+        label: isInnovativeModel ? "Fabrication Cost" : "Branding Cost",
+        description: isInnovativeModel
+          ? `${selectedRegionLabel} fabrication production and application support`
+          : `${selectedRegionLabel} vehicle branding production and application support`,
         rateLabel: `${formatPrice(pricingValue.brandingCost)} / vehicle`,
         periodLabel: "One-time",
         quantityLabel: `${quantityValue}`,
@@ -1796,7 +1889,25 @@ export default function RoadshowQO() {
         amount: effectivePowerBackupRate * quantityValue * daysValue,
       });
     }
+    if (isInnovativeModel) {
+      customAddOnsValue
+        .filter(
+          (addon) => addon.name.trim() && Number(addon.price || 0) > 0,
+        )
+        .forEach((addon) => {
+          const addonPrice = Number(addon.price || 0);
 
+          items.push({
+            label: addon.name.trim(),
+            description: "Custom add-on for innovative build",
+            rateLabel: `${formatPrice(addonPrice)}`,
+            periodLabel: "One-time",
+            quantityLabel: "1",
+            formulaLabel: `${formatPrice(addonPrice)} flat`,
+            amount: addonPrice,
+          });
+        });
+    }
     return items.filter(
       (item) =>
         item.amount > 0 ||
@@ -1819,6 +1930,7 @@ export default function RoadshowQO() {
       extraKmValue: extraKm,
       extraHoursValue: extraHours,
       upDownKmValue: upDownKm,
+      customAddOnsValue: customAddOns,
     });
   }, [
     selectedVehicle,
@@ -1847,6 +1959,8 @@ export default function RoadshowQO() {
     extraKmRate,
     extraHourRate,
     upDownRatePerKm,
+    isInnovativeModel,
+    customAddOns
   ]);
 
   const subtotal = useMemo(() => {
@@ -1897,6 +2011,14 @@ export default function RoadshowQO() {
       addOns.push("Power backup");
     }
 
+    if (isInnovativeModel) {
+      customAddOns
+        .filter((addon) => addon.name.trim() && Number(addon.price || 0) > 0)
+        .forEach((addon) => {
+          addOns.push(`${addon.name.trim()} (${formatPrice(Number(addon.price))})`);
+        });
+    }
+
     return addOns.length ? addOns : ["No optional add-ons selected"];
   }, [
     includePromoter,
@@ -1905,6 +2027,8 @@ export default function RoadshowQO() {
     canShowLedAndPowerAddOns,
     promoterQuantity,
     promoterDays,
+    isInnovativeModel,
+    customAddOns,
   ]);
 
   const isCompactProposal = quoteLineItems.length >= 6;
@@ -1968,33 +2092,33 @@ export default function RoadshowQO() {
 
 
   useEffect(() => {
-  const handlePrintShortcut = (event: KeyboardEvent) => {
-    const pressedKey = String(event.key || "").toLowerCase();
-    const isPrintShortcut =
-      (event.ctrlKey || event.metaKey) && pressedKey === "p";
+    const handlePrintShortcut = (event: KeyboardEvent) => {
+      const pressedKey = String(event.key || "").toLowerCase();
+      const isPrintShortcut =
+        (event.ctrlKey || event.metaKey) && pressedKey === "p";
 
-    if (!isPrintShortcut) return;
+      if (!isPrintShortcut) return;
 
-    event.preventDefault();
-    event.stopPropagation();
+      event.preventDefault();
+      event.stopPropagation();
 
-    if (typeof event.stopImmediatePropagation === "function") {
-      event.stopImmediatePropagation();
-    }
+      if (typeof event.stopImmediatePropagation === "function") {
+        event.stopImmediatePropagation();
+      }
 
-    showTopMessage(
-      "Ctrl + P / Cmd + P print shortcut is disabled. Please use Download Proposal PDF.",
-    );
-  };
+      showTopMessage(
+        "Ctrl + P / Cmd + P print shortcut is disabled. Please use Download Proposal PDF.",
+      );
+    };
 
-  window.addEventListener("keydown", handlePrintShortcut, true);
-  document.addEventListener("keydown", handlePrintShortcut, true);
+    window.addEventListener("keydown", handlePrintShortcut, true);
+    document.addEventListener("keydown", handlePrintShortcut, true);
 
-  return () => {
-    window.removeEventListener("keydown", handlePrintShortcut, true);
-    document.removeEventListener("keydown", handlePrintShortcut, true);
-  };
-}, []);
+    return () => {
+      window.removeEventListener("keydown", handlePrintShortcut, true);
+      document.removeEventListener("keydown", handlePrintShortcut, true);
+    };
+  }, []);
 
   useEffect(() => {
     if (
@@ -2580,7 +2704,52 @@ export default function RoadshowQO() {
       }));
     }
   };
+  // const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   clearSavedQuotation();
+  const handleCustomAddOnNameChange = (id: string, value: string) => {
+    clearSavedQuotation();
+    setCustomAddOns((current) =>
+      current.map((addon) =>
+        addon.id === id ? { ...addon, name: value } : addon,
+      ),
+    );
+  };
 
+  const handleCustomAddOnPriceChange = (id: string, value: string) => {
+    clearSavedQuotation();
+    const digitsOnly = sanitizeNumberText(value);
+    setCustomAddOns((current) =>
+      current.map((addon) =>
+        addon.id === id ? { ...addon, price: digitsOnly } : addon,
+      ),
+    );
+  };
+
+  const handleAddCustomAddOnRow = () => {
+    clearSavedQuotation();
+    customAddOnIdCounterRef.current += 1;
+    setCustomAddOns((current) => [
+      ...current,
+      {
+        id: `addon-${customAddOnIdCounterRef.current}`,
+        name: "",
+        price: "",
+      },
+    ]);
+  };
+
+  const handleRemoveCustomAddOnRow = (id: string) => {
+    clearSavedQuotation();
+    setCustomAddOns((current) => {
+      if (current.length <= 1) {
+        return current.map((addon) =>
+          addon.id === id ? { ...addon, name: "", price: "" } : addon,
+        );
+      }
+
+      return current.filter((addon) => addon.id !== id);
+    });
+  };
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     clearSavedQuotation();
 
@@ -2990,9 +3159,9 @@ export default function RoadshowQO() {
         selectedVehicleVariantSnapshot: selectedVehicleVariant || null,
         selectedVehicleSnapshot: selectedVehicle
           ? {
-              ...selectedVehicle,
-              normalizedCategory: normalizeCategory(selectedVehicle.category),
-            }
+            ...selectedVehicle,
+            normalizedCategory: normalizeCategory(selectedVehicle.category),
+          }
           : null,
       },
 
@@ -3249,16 +3418,16 @@ export default function RoadshowQO() {
     );
     const normalizedPromoterQuantity =
       includePromoter &&
-      Number.isFinite(parsedPromoterQuantity) &&
-      parsedPromoterQuantity >= 1
+        Number.isFinite(parsedPromoterQuantity) &&
+        parsedPromoterQuantity >= 1
         ? parsedPromoterQuantity
         : 1;
 
     const parsedPromoterDays = Number(sanitizeNumberText(promoterDaysInput));
     const normalizedPromoterDays =
       includePromoter &&
-      Number.isFinite(parsedPromoterDays) &&
-      parsedPromoterDays >= 1
+        Number.isFinite(parsedPromoterDays) &&
+        parsedPromoterDays >= 1
         ? Math.min(parsedPromoterDays, normalizedDays)
         : 1;
 
@@ -3290,8 +3459,8 @@ export default function RoadshowQO() {
     );
     const normalizedBrandingCostDiscount =
       canShowBrandingCostDiscount &&
-      Number.isFinite(parsedBrandingCostDiscount) &&
-      parsedBrandingCostDiscount >= 0
+        Number.isFinite(parsedBrandingCostDiscount) &&
+        parsedBrandingCostDiscount >= 0
         ? parsedBrandingCostDiscount
         : 0;
 
@@ -3300,8 +3469,8 @@ export default function RoadshowQO() {
     );
     const normalizedRtoPermissionDiscount =
       canShowRtoPermissionDiscount &&
-      Number.isFinite(parsedRtoPermissionDiscount) &&
-      parsedRtoPermissionDiscount >= 0
+        Number.isFinite(parsedRtoPermissionDiscount) &&
+        parsedRtoPermissionDiscount >= 0
         ? parsedRtoPermissionDiscount
         : 0;
 
@@ -3322,8 +3491,8 @@ export default function RoadshowQO() {
         : 0;
     const normalizedUpDownChargePerVehicle =
       normalizedDays < UP_DOWN_CHARGE_DAYS_THRESHOLD &&
-      normalizedUpDownKm > UP_DOWN_FREE_KM_LIMIT &&
-      upDownRatePerKm > 0
+        normalizedUpDownKm > UP_DOWN_FREE_KM_LIMIT &&
+        upDownRatePerKm > 0
         ? normalizedUpDownKm * upDownRatePerKm
         : 0;
 
@@ -3652,6 +3821,7 @@ export default function RoadshowQO() {
     }
   };
 
+
   return (
     <div className={`qoPage ${isPdfMode ? "pdfMode" : ""}`}>
       <header className="qoHeader noPrint">
@@ -3754,25 +3924,33 @@ export default function RoadshowQO() {
               <div className="qoLoading">Loading vehicle categories...</div>
             ) : (
               <div className="qoOptionGrid three">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    type="button"
-                    className={`qoSelectCard ${
-                      selectedCategory === category ? "active" : ""
-                    }`}
-                    onClick={() => handleCategorySelect(category)}
-                  >
-                    <strong>{category}</strong>
-                    <span>
-                      {category === "Flex Branding"
-                        ? "Traditional flex-branding vehicles."
-                        : category === "Hybrid LED + Flex"
-                          ? "LED screen with flex branding."
-                          : "High-impact full LED vehicles."}
-                    </span>
-                  </button>
-                ))}
+                {categories.map((category) => {
+                  // console.log(category);
+
+                  return (
+                    <button
+                      key={category}
+                      type="button"
+                      className={`qoSelectCard ${selectedCategory === category ? "active" : ""
+                        }`}
+                      onClick={() => handleCategorySelect(category)}
+                    >
+                      <strong>{category}</strong>
+
+                      <span>
+                        {category === "Flex Branding"
+                          ? "Traditional flex-branding vehicles."
+                          : category === "Hybrid LED + Flex"
+                            ? "LED screen with flex branding."
+                            : category === "LED Vehicles"
+                              ? "High-impact full LED vehicles."
+                              : category === "Innovative Model"
+                                ? "High-Impact Customized Vehicles"
+                                : "Custom fabrication & innovative builds."}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </section>
@@ -3792,9 +3970,8 @@ export default function RoadshowQO() {
                     <button
                       key={vehicle.id}
                       type="button"
-                      className={`qoSelectCard ${
-                        selectedVehicleId === String(vehicle.id) ? "active" : ""
-                      }`}
+                      className={`qoSelectCard ${selectedVehicleId === String(vehicle.id) ? "active" : ""
+                        }`}
                       onClick={() => handleVehicleSelect(vehicle)}
                     >
                       <strong>{vehicle.name}</strong>
@@ -3849,17 +4026,17 @@ export default function RoadshowQO() {
 
                         {selectedVehicleLeastSellingRate <
                           selectedVehicleRate && (
-                          <span
-                            style={{
-                              display: "block",
-                              marginTop: "5px",
-                              color: "#64748b",
-                              fontSize: "13px",
-                            }}
-                          >
-                            LSP: {formatPrice(selectedVehicleLeastSellingRate)}
-                          </span>
-                        )}
+                            <span
+                              style={{
+                                display: "block",
+                                marginTop: "5px",
+                                color: "#64748b",
+                                fontSize: "13px",
+                              }}
+                            >
+                              LSP: {formatPrice(selectedVehicleLeastSellingRate)}
+                            </span>
+                          )}
 
                         <span
                           style={{
@@ -3964,9 +4141,8 @@ export default function RoadshowQO() {
                           <button
                             key={variant.id}
                             type="button"
-                            className={`qoSelectCard ${
-                              isActiveVariant ? "active" : ""
-                            }`}
+                            className={`qoSelectCard ${isActiveVariant ? "active" : ""
+                              }`}
                             onClick={() => handleVariantSelect(variant)}
                             style={{
                               alignItems: "flex-start",
@@ -4510,7 +4686,7 @@ export default function RoadshowQO() {
               }}
             >
               <div className="qoSelectCard" style={{ cursor: "default" }}>
-                <strong>Branding Cost</strong>
+                <strong>{isInnovativeModel ? "Fabrication Cost" : "Branding Cost"}</strong>
                 <span>
                   {formatPrice(pricingDetails.brandingCost)} / vehicle
                 </span>
@@ -4598,10 +4774,12 @@ export default function RoadshowQO() {
                     onBlur={handleLeastSellingPriceBlur}
                   />
                 </div>
-                <small>
-                  Allowed: {formatPrice(0)} to{" "}
-                  {formatPrice(selectedVehicleMaxDiscount || 0)}
-                </small>
+                {selectedVehicleHasLeastSellingPrice && (
+                  <small>
+                    Allowed: {formatPrice(0)} to{" "}
+                    {formatPrice(selectedVehicleMaxDiscount || 0)}
+                  </small>
+                )}
                 {leastSellingPriceError && (
                   <small style={{ color: "#dc2626", fontWeight: 700 }}>
                     {leastSellingPriceError}
@@ -4653,7 +4831,7 @@ export default function RoadshowQO() {
                 </small>
               </label>
 
-              <label>
+              {/* <label>
                 Branding Cost ({selectedRegionLabel})
                 <div className="moneyInput">
                   <span>Rs.</span>
@@ -4667,11 +4845,33 @@ export default function RoadshowQO() {
                   />
                 </div>
                 <small>Auto-loaded from selected vehicle and region.</small>
+              </label> */}
+              <label>
+                {isInnovativeModel ? "Fabrication Cost" : "Branding Cost"} ({selectedRegionLabel})
+                <div className="moneyInput">
+                  <span>Rs.</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={pricingDetails.brandingCost}
+                    readOnly={!isInnovativeModel}
+                    disabled={!isInnovativeModel}
+                    onChange={(event) => {
+                      if (!isInnovativeModel) return;
+                      handlePricingChange("brandingCost", event.target.value);
+                    }}
+                  />
+                </div>
+                <small>
+                  {isInnovativeModel
+                    ? "Enter the fabrication cost manually for this custom build."
+                    : "Auto-loaded from selected vehicle and region."}
+                </small>
               </label>
-
               {canShowBrandingCostDiscount && (
                 <label>
-                  Branding Cost Discount
+                  {isInnovativeModel ? "Fabrication Cost Discount" : "Branding Cost Discount"}
                   <div className="moneyInput">
                     <span>Rs.</span>
                     <input
@@ -4708,13 +4908,19 @@ export default function RoadshowQO() {
                     }}
                   />
                 </div>
-                <small>
+                {/* <small>
                   {canEditRtoPermission
                     ? "Editable for Other States. This value updates the RTO Permission line item in the quotation table."
                     : "Locked. Auto-loaded from selected vehicle and region."}
+                </small> */}
+                <small>
+                  {isInnovativeModel
+                    ? "Enter the RTO permission cost manually for this custom build."
+                    : canEditRtoPermission
+                      ? "Editable for Other States. This value updates the RTO Permission line item in the quotation table."
+                      : "Locked. Auto-loaded from selected vehicle and region."}
                 </small>
               </label>
-
               {canShowRtoPermissionDiscount && (
                 <label>
                   RTO Permission Discount
@@ -4805,80 +5011,81 @@ export default function RoadshowQO() {
             </div>
 
             <div className="qoAddonSuite">
-              <div
-                className={`qoPromoterSetup ${includePromoter ? "active" : ""}`}
-              >
-                <label
-                  className={`qoAddon qoAddonCard qoAddonPromoterCard ${
-                    includePromoter ? "active" : ""
-                  }`}
+              {!isInnovativeModel && (
+                <div
+                  className={`qoPromoterSetup ${includePromoter ? "active" : ""}`}
                 >
-                  <input
-                    type="checkbox"
-                    checked={includePromoter}
-                    onChange={(event) =>
-                      handlePromoterToggle(event.target.checked)
-                    }
-                  />
-                  <span className="qoAddonCardBody">
-                    <strong>Promoter Support</strong>
-                    <em>On-ground campaign promoters</em>
-                    <small>
-                      {formatPrice(pricingDetails.promoterCost)} / day
-                    </small>
-                  </span>
-                </label>
+                  <label
+                    className={`qoAddon qoAddonCard qoAddonPromoterCard ${includePromoter ? "active" : ""
+                      }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={includePromoter}
+                      onChange={(event) =>
+                        handlePromoterToggle(event.target.checked)
+                      }
+                    />
+                    <span className="qoAddonCardBody">
+                      <strong>Promoter Support</strong>
+                      <em>On-ground campaign promoters</em>
+                      <small>
+                        {formatPrice(pricingDetails.promoterCost)} / day
+                      </small>
+                    </span>
+                  </label>
 
-                {includePromoter && (
-                  <div className="qoPromoterControls">
-                    <div className="qoPromoterControlHeader">
-                      <span>Promoter Requirement</span>
-                      <strong>
-                        {promoterQuantity} promoter(s) · {promoterDays} day(s)
-                      </strong>
+                  {includePromoter && (
+                    <div className="qoPromoterControls">
+                      <div className="qoPromoterControlHeader">
+                        <span>Promoter Requirement</span>
+                        <strong>
+                          {promoterQuantity} promoter(s) · {promoterDays} day(s)
+                        </strong>
+                      </div>
+
+                      <div className="qoPromoterInputGrid">
+                        <label>
+                          <span>No. of Promoters</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={promoterQuantityInput}
+                            onChange={(event) =>
+                              handlePromoterQuantityChange(event.target.value)
+                            }
+                            onBlur={handlePromoterQuantityBlur}
+                          />
+                          <small>Default count: 1 promoter</small>
+                        </label>
+
+                        <label>
+                          <span>No. of Promoter Days</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={promoterDaysInput}
+                            onChange={(event) =>
+                              handlePromoterDaysChange(event.target.value)
+                            }
+                            onBlur={handlePromoterDaysBlur}
+                          />
+                          <small>Allowed: 1 to {days} day(s)</small>
+                          {promoterDaysError && (
+                            <small className="qoFieldError">
+                              {promoterDaysError}
+                            </small>
+                          )}
+                        </label>
+                      </div>
                     </div>
+                  )}
+                </div>
+              )}
 
-                    <div className="qoPromoterInputGrid">
-                      <label>
-                        <span>No. of Promoters</span>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          value={promoterQuantityInput}
-                          onChange={(event) =>
-                            handlePromoterQuantityChange(event.target.value)
-                          }
-                          onBlur={handlePromoterQuantityBlur}
-                        />
-                        <small>Default count: 1 promoter</small>
-                      </label>
-
-                      <label>
-                        <span>No. of Promoter Days</span>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          value={promoterDaysInput}
-                          onChange={(event) =>
-                            handlePromoterDaysChange(event.target.value)
-                          }
-                          onBlur={handlePromoterDaysBlur}
-                        />
-                        <small>Allowed: 1 to {days} day(s)</small>
-                        {promoterDaysError && (
-                          <small className="qoFieldError">
-                            {promoterDaysError}
-                          </small>
-                        )}
-                      </label>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {canShowLedAndPowerAddOns && (
+              {canShowLedAndPowerAddOns && !isInnovativeModel && (
                 <div className="qoAddonOptionsGrid">
                   <label
                     className={`qoAddon qoAddonCard ${includeLed ? "active" : ""}`}
@@ -4898,9 +5105,8 @@ export default function RoadshowQO() {
                   </label>
 
                   <label
-                    className={`qoAddon qoAddonCard ${
-                      includePowerBackup ? "active" : ""
-                    } ${includeLed ? "locked" : ""}`}
+                    className={`qoAddon qoAddonCard ${includePowerBackup ? "active" : ""
+                      } ${includeLed ? "locked" : ""}`}
                   >
                     <input
                       type="checkbox"
@@ -4920,12 +5126,93 @@ export default function RoadshowQO() {
                       <small>
                         {formatPrice(
                           pricingDetails.powerBackup ||
-                            POWER_BACKUP_ADDON_RATE_PER_DAY,
+                          POWER_BACKUP_ADDON_RATE_PER_DAY,
                         )}{" "}
                         / day
                       </small>
                     </span>
                   </label>
+                </div>
+              )}
+
+              {isInnovativeModel && (
+                <div className="qoCustomAddonBuilder">
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr 40px",
+                      gap: "10px",
+                      marginBottom: "8px",
+                      fontWeight: 700,
+                      fontSize: "13px",
+                      color: "#475569",
+                    }}
+                  >
+                    <span>Addon Name</span>
+                    <span>Price</span>
+                    <span></span>
+                  </div>
+
+                  {customAddOns.map((addon) => (
+                    <div
+                      key={addon.id}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr 40px",
+                        gap: "10px",
+                        marginBottom: "10px",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div className="moneyInput addonNameInput">
+                        <input
+                          type="text"
+                          placeholder="e.g. Custom Addons"
+                          value={addon.name}
+                          onChange={(event) =>
+                            handleCustomAddOnNameChange(
+                              addon.id,
+                              event.target.value,
+                            )
+                          }
+                        />
+                      </div>
+
+                      <div className="moneyInput">
+                        <span>Rs.</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          placeholder="0"
+                          value={addon.price}
+                          onChange={(event) =>
+                            handleCustomAddOnPriceChange(
+                              addon.id,
+                              event.target.value,
+                            )
+                          }
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        className="smallBtn dangerBtn"
+                        onClick={() => handleRemoveCustomAddOnRow(addon.id)}
+                        aria-label="Remove add-on row"
+                      >
+                        −
+                      </button>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    className="smallBtn"
+                    onClick={handleAddCustomAddOnRow}
+                  >
+                    + Add Add-on
+                  </button>
                 </div>
               )}
 
@@ -4944,9 +5231,8 @@ export default function RoadshowQO() {
 
         <aside className="qoPreviewColumn">
           <div
-            className={`proposalBook printableArea ${
-              isCompactProposal ? "denseQuoteBook" : ""
-            } ${ENABLE_DIGITAL_SIGNATURE && uploadedSignature ? "hasSignatureQuote" : "noSignatureQuote"}`}
+            className={`proposalBook printableArea ${isCompactProposal ? "denseQuoteBook" : ""
+              } ${ENABLE_DIGITAL_SIGNATURE && uploadedSignature ? "hasSignatureQuote" : "noSignatureQuote"}`}
             style={{ textTransform: "capitalize" }}
           >
             <section className="proposalDocument pdfPage quotePageOne">
@@ -5315,11 +5601,10 @@ export default function RoadshowQO() {
               </section>
 
               <footer
-                className={`quoteFooter quotePremiumFooter ${
-                  ENABLE_DIGITAL_SIGNATURE && uploadedSignature
-                    ? "hasSignature"
-                    : "noSignature"
-                }`}
+                className={`quoteFooter quotePremiumFooter ${ENABLE_DIGITAL_SIGNATURE && uploadedSignature
+                  ? "hasSignature"
+                  : "noSignature"
+                  }`}
               >
                 <div className="quoteFooterNote">
                   <span>Thank you for choosing Adinn Roadshow.</span>
