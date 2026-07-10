@@ -18,7 +18,7 @@ const VEHICLES_JSON_URL = USE_LOCAL_JSON
   ? "./vehicles.json"
   : "https://adinn-space.sgp1.cdn.digitaloceanspaces.com/roadshowRateCard/vehicles.json";
 
-const USE_LOCAL_API = false; // set true for local, false for live
+const USE_LOCAL_API = true; // set true for local, false for live
 const API_BASE_URL = USE_LOCAL_API
   ? "http://localhost:3001"
   : "https://roadshow-backend.onrender.com";
@@ -55,7 +55,7 @@ const PREPARED_BY_DEFAULTS = {
   gstNumber: DEFAULT_PREPARED_BY_GST,
 };
 
-const ENABLE_PREFILLED_QUOTATION_VALUES = false; // set true to auto-load the sample quotation values below
+const ENABLE_PREFILLED_QUOTATION_VALUES = true; // set true to auto-load the sample quotation values below
 
 const PREFILLED_QUOTATION_VALUES = {
   clientDetails: {
@@ -71,7 +71,7 @@ const PREFILLED_QUOTATION_VALUES = {
   preparedByDetails: {
     staffName: "Magwin",
     staffPhone: "9785101471",
-    email: "magwin@yopmail.com",
+    email: "reactdeveloper@adinn.co.in",
   },
   campaign: {
     region: "rotn" as RegionKey,
@@ -3654,16 +3654,31 @@ export default function RoadshowQO() {
 
       const pdfBlob = pdf.output("blob");
 
-      await uploadRoadshowQuotationPdf({
-        quotationId: savedQuotation.quotationId,
-        pdfBlob,
-        fileName,
-      });
+      // await uploadRoadshowQuotationPdf({
+      //   quotationId: savedQuotation.quotationId,
+      //   pdfBlob,
+      //   fileName,
+      // });
 
-      return {
-        pdfBlob,
-        fileName,
-      };
+  const uploadResult = await uploadRoadshowQuotationPdf({
+  quotationId: savedQuotation.quotationId,
+  pdfBlob,
+  fileName,
+});
+
+if (uploadResult?.approvalMailError) {
+  console.warn("Approval mail failed:", uploadResult.approvalMailError);
+
+  setApprovalToastMessage(
+    "Quotation saved and PDF uploaded. Approval mail was blocked by the mail server, please notify admin manually.",
+  );
+}
+
+return {
+  pdfBlob,
+  fileName,
+  uploadResult,
+};
     } finally {
       document.body.classList.remove("pdfExporting");
       setPdfLogoSrc("");
