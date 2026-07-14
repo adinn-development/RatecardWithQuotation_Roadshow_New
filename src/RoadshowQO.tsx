@@ -18,7 +18,7 @@ const VEHICLES_JSON_URL = USE_LOCAL_JSON
   ? "./vehicles.json"
   : "https://adinn-space.sgp1.cdn.digitaloceanspaces.com/roadshowRateCard/vehicles.json";
 
-const USE_LOCAL_API = true; // set true for local, false for live
+const USE_LOCAL_API = false; // set true for local, false for live
 const API_BASE_URL = USE_LOCAL_API
   ? "http://localhost:3001"
   : "https://roadshow-backend.onrender.com";
@@ -55,7 +55,7 @@ const PREPARED_BY_DEFAULTS = {
   gstNumber: DEFAULT_PREPARED_BY_GST,
 };
 
-const ENABLE_PREFILLED_QUOTATION_VALUES = true; // set true to auto-load the sample quotation values below
+const ENABLE_PREFILLED_QUOTATION_VALUES = false; // set true to auto-load the sample quotation values below
 
 const PREFILLED_QUOTATION_VALUES = {
   clientDetails: {
@@ -71,7 +71,7 @@ const PREFILLED_QUOTATION_VALUES = {
   preparedByDetails: {
     staffName: "Magwin",
     staffPhone: "9785101471",
-    email: "reactdeveloper@adinn.co.in",
+    email: "magwin@yopmail.com",
   },
   campaign: {
     region: "rotn" as RegionKey,
@@ -874,7 +874,10 @@ const getRegionChargeFallbackKeys = (region: RegionKey, chargeLabel = "") => {
     }
   }
 
-  if (normalizedLabel.includes("branding")) {
+  if (
+    normalizedLabel.includes("branding") ||
+    normalizedLabel.includes("fabrication")
+  ) {
     if (region !== "kerala") {
       fallbackKeys.push(
         "general",
@@ -955,16 +958,51 @@ const findCharge = (
   return parseMoney(getLocationChargeValue(row, region));
 };
 
+const INNOVATIVE_FABRICATION_VEHICLE_IDS = new Set(["9", "10", "11"]);
+
+const isInnovativeFabricationVehicleRecord = (
+  vehicle: Vehicle | undefined,
+) => {
+  return Boolean(
+    vehicle &&
+    normalizeCategory(vehicle.category) === "Innovative Model" &&
+    INNOVATIVE_FABRICATION_VEHICLE_IDS.has(String(vehicle.id)),
+  );
+};
+
 const getDefaultPricing = (
   vehicle: Vehicle | undefined,
   region: RegionKey,
   variant?: VehicleVariant,
 ): PricingDetails => {
+  const usesInnovativeFabrication =
+    isInnovativeFabricationVehicleRecord(vehicle);
+
+  const defaultFabricationCost = usesInnovativeFabrication
+    ? findCharge(vehicle, ["fabrication"], region)
+    : 0;
+
   return {
-    vehicleRate: variant?.pricePerDay || vehicle?.pricePerDay || 0,
-    brandingCost: findCharge(vehicle, ["branding"], region),
-    rtoPermission: findCharge(vehicle, ["rto", "permission"], region),
-    promoterCost: findCharge(vehicle, ["promoter"], region),
+    vehicleRate:
+      variant?.pricePerDay ||
+      vehicle?.pricePerDay ||
+      0,
+    brandingCost: usesInnovativeFabrication
+      ? defaultFabricationCost
+      : findCharge(vehicle, ["branding"], region),
+
+    /* * Kerala RTO for Innovative Model remains editable and based on design.  Other regions and categories continue using the JSON value. */
+    rtoPermission:
+      usesInnovativeFabrication && region === "kerala"
+        ? 0
+        : findCharge(vehicle, ["rto", "permission"], region),
+
+    promoterCost: findCharge(
+      vehicle,
+      ["promoter"],
+      region,
+    ),
+
     ledCost: LED_TV_ADDON_RATE_PER_DAY,
     led55Cost: 0,
     powerBackup: POWER_BACKUP_ADDON_RATE_PER_DAY,
@@ -1247,6 +1285,7 @@ export default function RoadshowQO() {
   const [quantityError, setQuantityError] = useState("");
   const [campaignDaysError, setCampaignDaysError] = useState("");
   const [promoterDaysError, setPromoterDaysError] = useState("");
+  const [fabricationCostError, setFabricationCostError] = useState("");
   const [addOnMessage, setAddOnMessage] = useState("");
 
   const [includePromoter, setIncludePromoter] = useState(false);
@@ -1525,7 +1564,18 @@ export default function RoadshowQO() {
     "LED Vehicles",
   ].includes(selectedCategory);
   const isInnovativeModel = selectedCategory === "Innovative Model";
-  const canEditRtoPermission = region === "otherStates" || isInnovativeModel;
+
+  // Apply fabrication/RTO design-based behaviour only to Innovative Model
+  // vehicle IDs 9, 10 and 11. Flex Branding, Hybrid LED + Flex and LED
+  // Vehicles continue using their existing pricing behaviour.
+  const isInnovativeFabricationVehicle =
+    isInnovativeFabricationVehicleRecord(selectedVehicle);
+
+  const isKeralaInnovativeRtoBasedOnDesign =
+    isInnovativeFabricationVehicle && region === "kerala";
+
+  const canEditRtoPermission = isInnovativeFabricationVehicle;
+
   const canShowBrandingCostDiscount = selectedCategory !== "LED Vehicles";
   const canShowRtoPermissionDiscount = Number(pricingDetails.rtoPermission || 0) !== 0;
   const otherStateNameLabel = otherStateName.trim();
@@ -1533,6 +1583,49 @@ export default function RoadshowQO() {
     region === "otherStates" && otherStateNameLabel
       ? otherStateNameLabel
       : getRegionLabel(region);
+  //VALIDATION ADDED FOR FABRICATION COST
+  const validateRequiredFabricationCost = (
+    pricingValue: PricingDetails = pricingDetails,
+  ) => {
+    if (!isInnovativeFabricationVehicle) {
+      setFabricationCostError("");
+      return true;
+    }
+
+    const fabricationCost = Number(
+      pricingValue.brandingCost || 0,
+    );
+
+    if (
+      !Number.isFinite(fabricationCost) ||
+      fabricationCost <= 0
+    ) {
+      const message =
+        "Fabrication Cost is required for the selected Innovative Model. Please enter an amount.";
+
+      setFabricationCostError(message);
+      showTopMessage(message);
+
+      window.setTimeout(() => {
+        const fabricationInput =
+          document.getElementById(
+            "innovative-fabrication-cost",
+          ) as HTMLInputElement | null;
+
+        fabricationInput?.focus();
+        fabricationInput?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 100);
+
+      return false;
+    }
+
+    setFabricationCostError("");
+    return true;
+  };
+  //VALIDATION ADDED FOR FABRICATION COST
 
   const selectedVehicleDetailRows = useMemo(() => {
     return buildVehicleDetailRows(
@@ -1582,6 +1675,7 @@ export default function RoadshowQO() {
     const nextDiscountAmount = getPrefilledDiscountAmount();
 
     setPricingDetails(nextPricing);
+    setFabricationCostError("");
     setVehicleDiscountAmount(nextDiscountAmount);
     setLeastSellingPriceInput(String(nextDiscountAmount));
     setLeastSellingPriceError("");
@@ -1780,9 +1874,11 @@ export default function RoadshowQO() {
         discountAmount: vehicleDiscountAmount,
       },
       {
-        label: isInnovativeModel ? "Fabrication Cost" : "Branding Cost",
-        description: isInnovativeModel
-          ? `${selectedRegionLabel} fabrication production and application support`
+        label: isInnovativeFabricationVehicle
+          ? "Fabrication Cost"
+          : "Branding Cost",
+        description: isInnovativeFabricationVehicle
+          ? `${selectedRegionLabel} fabrication cost based on the approved design`
           : `${selectedRegionLabel} vehicle branding production and application support`,
         rateLabel: `${formatPrice(pricingValue.brandingCost)} / vehicle`,
         periodLabel: "One-time",
@@ -1796,8 +1892,12 @@ export default function RoadshowQO() {
         discountAmount: brandingDiscountAmount,
       },
       {
-        label: "RTO Permission",
-        description: `Monthly ${selectedRegionLabel} Permission Charges.`,
+        label: isKeralaInnovativeRtoBasedOnDesign
+          ? "RTO Permission (Based on the design)"
+          : "RTO Permission",
+        description: isKeralaInnovativeRtoBasedOnDesign
+          ? `Monthly ${selectedRegionLabel} permission charge based on the approved design`
+          : `Monthly ${selectedRegionLabel} Permission Charges.`,
         rateLabel: `${formatPrice(pricingValue.rtoPermission)} / vehicle`,
         periodLabel: `${rtoBillingMonthsValue} billing month(s)`,
         quantityLabel: `${quantityValue}`,
@@ -1960,6 +2060,7 @@ export default function RoadshowQO() {
     extraHourRate,
     upDownRatePerKm,
     isInnovativeModel,
+    isInnovativeFabricationVehicle,
     customAddOns
   ]);
 
@@ -2187,8 +2288,10 @@ export default function RoadshowQO() {
       [field]: value,
     }));
   };
-
-  const handlePricingChange = (field: keyof PricingDetails, value: string) => {
+  const handlePricingChange = (
+    field: keyof PricingDetails,
+    value: string,
+  ) => {
     clearSavedQuotation();
 
     const safeValue = parseNumberText(value, 0);
@@ -2197,8 +2300,28 @@ export default function RoadshowQO() {
       ...current,
       [field]: safeValue,
     }));
-  };
 
+    if (
+      field === "brandingCost" &&
+      isInnovativeFabricationVehicle
+    ) {
+      if (safeValue > 0) {
+        setFabricationCostError("");
+
+        if (
+          pdfError.includes(
+            "Fabrication Cost is required",
+          )
+        ) {
+          setPdfError("");
+        }
+      } else {
+        setFabricationCostError(
+          "Fabrication Cost is required. Please enter an amount.",
+        );
+      }
+    }
+  };
   const handleLeastSellingPriceChange = (value: string) => {
     clearSavedQuotation();
     const digitsOnly = sanitizeNumberText(value);
@@ -2987,6 +3110,14 @@ export default function RoadshowQO() {
     );
     const effectiveGstPercent = overrides.gstPercent ?? gstPercent;
     const effectivePricingDetails = overrides.pricingDetails ?? pricingDetails;
+    if (
+      isInnovativeFabricationVehicle &&
+      Number(effectivePricingDetails.brandingCost || 0) <= 0
+    ) {
+      throw new Error(
+        "Fabrication Cost is required for the selected Innovative Model.",
+      );
+    }
     const effectiveVehicleDiscountAmount =
       overrides.vehicleDiscountAmount ?? vehicleDiscountAmount;
     const effectiveBrandingCostDiscount = canShowBrandingCostDiscount
@@ -3384,6 +3515,9 @@ export default function RoadshowQO() {
   };
 
   const prepareAndPrintProposal = async () => {
+    if (!validateRequiredFabricationCost()) {
+      return;
+    }
     if (requiresApproval) {
       setPdfError(
         "This quotation has Branding/RTO discount and must be submitted for approval before print.",
@@ -3660,25 +3794,25 @@ export default function RoadshowQO() {
       //   fileName,
       // });
 
-  const uploadResult = await uploadRoadshowQuotationPdf({
-  quotationId: savedQuotation.quotationId,
-  pdfBlob,
-  fileName,
-});
+      const uploadResult = await uploadRoadshowQuotationPdf({
+        quotationId: savedQuotation.quotationId,
+        pdfBlob,
+        fileName,
+      });
 
-if (uploadResult?.approvalMailError) {
-  console.warn("Approval mail failed:", uploadResult.approvalMailError);
+      if (uploadResult?.approvalMailError) {
+        console.warn("Approval mail failed:", uploadResult.approvalMailError);
 
-  setApprovalToastMessage(
-    "Quotation saved and PDF uploaded. Approval mail was blocked by the mail server, please notify admin manually.",
-  );
-}
+        setApprovalToastMessage(
+          "Quotation saved and PDF uploaded. Approval mail was blocked by the mail server, please notify admin manually.",
+        );
+      }
 
-return {
-  pdfBlob,
-  fileName,
-  uploadResult,
-};
+      return {
+        pdfBlob,
+        fileName,
+        uploadResult,
+      };
     } finally {
       document.body.classList.remove("pdfExporting");
       setPdfLogoSrc("");
@@ -3688,7 +3822,10 @@ return {
 
   const handleSubmitForApproval = async () => {
     if (isSubmittingApproval || isGeneratingPdf) return;
-
+    //VALIDATION ADDED FOR FABRICATION COST
+    if (!validateRequiredFabricationCost()) {
+      return;
+    }
     const normalizedQuoteValues = normalizeMinimumFieldsForDownload();
 
     if (!clientDetails.companyName.trim()) {
@@ -3763,6 +3900,11 @@ return {
 
   const handleDownloadPdf = async () => {
     if (isGeneratingPdf || isSubmittingApproval) return;
+    //VALIDATION ADDED FOR FABRICATION COST
+    if (!validateRequiredFabricationCost()) {
+      return;
+    }
+    //VALIDATION ADDED FOR FABRICATION COST
 
     const normalizedQuoteValues = normalizeMinimumFieldsForDownload();
 
@@ -3925,8 +4067,10 @@ return {
         <section className="qoFormColumn noPrint">
           {requiresApproval && (
             <div className="qoApprovalNotice">
-              Branding/RTO discount detected. PDF download and print are locked
-              for staff until admin approval.
+              {isInnovativeFabricationVehicle
+                ? "Fabrication/RTO discount detected."
+                : "Branding/RTO discount detected."}{" "}
+              PDF download and print are locked for staff until admin approval.
             </div>
           )}
 
@@ -4701,11 +4845,20 @@ return {
               }}
             >
               <div className="qoSelectCard" style={{ cursor: "default" }}>
-                <strong>{isInnovativeModel ? "Fabrication Cost" : "Branding Cost"}</strong>
+                <strong>
+                  {isInnovativeFabricationVehicle
+                    ? "Fabrication Cost"
+                    : "Branding Cost"}
+                </strong>
                 <span>
                   {formatPrice(pricingDetails.brandingCost)} / vehicle
                 </span>
-                <small>{selectedRegionLabel}</small>
+                <small>
+                  {selectedRegionLabel}
+                  {isInnovativeFabricationVehicle
+                    ? " · Based on the design"
+                    : ""}
+                </small>
               </div>
 
               <div className="qoSelectCard" style={{ cursor: "default" }}>
@@ -4714,7 +4867,12 @@ return {
                   {formatPrice(pricingDetails.rtoPermission)} / 1 month /
                   vehicle
                 </span>
-                <small>{selectedRegionLabel}</small>
+                <small>
+                  {selectedRegionLabel}
+                  {isKeralaInnovativeRtoBasedOnDesign
+                    ? " · Based on the design"
+                    : ""}
+                </small>
               </div>
 
               <div className="qoSelectCard" style={{ cursor: "default" }}>
@@ -4861,8 +5019,11 @@ return {
                 </div>
                 <small>Auto-loaded from selected vehicle and region.</small>
               </label> */}
-              <label>
-                {isInnovativeModel ? "Fabrication Cost" : "Branding Cost"} ({selectedRegionLabel})
+              {/* <label>
+                {isInnovativeFabricationVehicle
+                  ? "Fabrication Cost (Based on the design)"
+                  : `Branding Cost (${selectedRegionLabel})`}
+                {isInnovativeFabricationVehicle && ` (${selectedRegionLabel})`}
                 <div className="moneyInput">
                   <span>Rs.</span>
                   <input
@@ -4870,23 +5031,111 @@ return {
                     inputMode="numeric"
                     pattern="[0-9]*"
                     value={pricingDetails.brandingCost}
-                    readOnly={!isInnovativeModel}
-                    disabled={!isInnovativeModel}
+                    readOnly={!isInnovativeFabricationVehicle}
+                    disabled={!isInnovativeFabricationVehicle}
                     onChange={(event) => {
-                      if (!isInnovativeModel) return;
+                      if (!isInnovativeFabricationVehicle) return;
                       handlePricingChange("brandingCost", event.target.value);
                     }}
                   />
                 </div>
                 <small>
-                  {isInnovativeModel
-                    ? "Enter the fabrication cost manually for this custom build."
+                  {isInnovativeFabricationVehicle
+                    ? "Enter the fabrication cost manually. The amount depends on the approved design."
                     : "Auto-loaded from selected vehicle and region."}
                 </small>
+              </label> */}
+
+              <label>
+                {isInnovativeFabricationVehicle
+                  ? `Fabrication Cost (${selectedRegionLabel})`
+                  : `Branding Cost (${selectedRegionLabel})`}
+
+                {isInnovativeFabricationVehicle && (
+                  <span
+                    style={{
+                      marginLeft: "5px",
+                      color: "#64748b",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    (Based on the design)
+                  </span>
+                )}
+
+                <div className="moneyInput">
+                  <span>Rs.</span>
+
+                  <input
+                    id={
+                      isInnovativeFabricationVehicle
+                        ? "innovative-fabrication-cost"
+                        : undefined
+                    }
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={pricingDetails.brandingCost}
+                    required={isInnovativeFabricationVehicle}
+                    aria-required={
+                      isInnovativeFabricationVehicle
+                    }
+                    aria-invalid={
+                      isInnovativeFabricationVehicle &&
+                      Boolean(fabricationCostError)
+                    }
+                    readOnly={!isInnovativeFabricationVehicle}
+                    disabled={!isInnovativeFabricationVehicle}
+                    onChange={(event) => {
+                      if (!isInnovativeFabricationVehicle) {
+                        return;
+                      }
+
+                      handlePricingChange(
+                        "brandingCost",
+                        event.target.value,
+                      );
+                    }}
+                    onBlur={() => {
+                      if (
+                        isInnovativeFabricationVehicle &&
+                        Number(pricingDetails.brandingCost || 0) <= 0
+                      ) {
+                        setFabricationCostError(
+                          "Fabrication Cost is required. Please enter an amount greater than zero.",
+                        );
+                      }
+                    }}
+                  />
+                </div>
+
+                <small>
+                  {isInnovativeFabricationVehicle
+                    ? `Default: ${region === "kerala"
+                      ? formatPrice(30000)
+                      : formatPrice(10000)
+                    }. Editable based on the approved design.`
+                    : "Auto-loaded from selected vehicle and region."}
+                </small>
+
+                {isInnovativeFabricationVehicle &&
+                  fabricationCostError && (
+                    <small
+                      style={{
+                        color: "#dc2626",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {fabricationCostError}
+                    </small>
+                  )}
               </label>
               {canShowBrandingCostDiscount && (
                 <label>
-                  {isInnovativeModel ? "Fabrication Cost Discount" : "Branding Cost Discount"}
+                  {isInnovativeFabricationVehicle
+                    ? "Fabrication Cost Discount"
+                    : "Branding Cost Discount"}
                   <div className="moneyInput">
                     <span>Rs.</span>
                     <input
@@ -4908,8 +5157,23 @@ return {
 
               <label>
                 RTO Permission ({selectedRegionLabel})
+
+                {isKeralaInnovativeRtoBasedOnDesign && (
+                  <span
+                    style={{
+                      marginLeft: "5px",
+                      color: "#64748b",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    (Based on the design)
+                  </span>
+                )}
+
                 <div className="moneyInput">
                   <span>Rs.</span>
+
                   <input
                     type="text"
                     inputMode="numeric"
@@ -4918,22 +5182,22 @@ return {
                     readOnly={!canEditRtoPermission}
                     disabled={!canEditRtoPermission}
                     onChange={(event) => {
-                      if (!canEditRtoPermission) return;
-                      handlePricingChange("rtoPermission", event.target.value);
+                      if (!canEditRtoPermission) {
+                        return;
+                      }
+
+                      handlePricingChange(
+                        "rtoPermission",
+                        event.target.value,
+                      );
                     }}
                   />
                 </div>
-                {/* <small>
-                  {canEditRtoPermission
-                    ? "Editable for Other States. This value updates the RTO Permission line item in the quotation table."
-                    : "Locked. Auto-loaded from selected vehicle and region."}
-                </small> */}
+
                 <small>
-                  {isInnovativeModel
-                    ? "Enter the RTO permission cost manually for this custom build."
-                    : canEditRtoPermission
-                      ? "Editable for Other States. This value updates the RTO Permission line item in the quotation table."
-                      : "Locked. Auto-loaded from selected vehicle and region."}
+                  {isInnovativeFabricationVehicle
+                    ? "Editable for the Innovative Model. The default amount is loaded from the selected vehicle and region, and it can be changed based on the approved design."
+                    : "Locked. Auto-loaded from the selected vehicle and region."}
                 </small>
               </label>
               {canShowRtoPermissionDiscount && (

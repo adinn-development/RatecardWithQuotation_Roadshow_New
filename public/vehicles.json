@@ -739,7 +739,7 @@
     "id": 9,
     "category": "Innovative Model",
     "type": "Custom Fabrication",
-    "name": "Tata Ace 8 Feet Vehicl",
+    "name": "Tata Ace 8 Feet Vehicle",
     "shortDescription": "Custom fabricated format for innovative branding concepts.",
     "pricePerDay": 3000,
     "leastSellingPricingPerDay": 2500,
@@ -755,7 +755,7 @@
       },
       {
         "label": "Extra KM",
-        "value": "Rs. 12/km"
+        "value": "Rs. 24/km"
       },
       {
         "label": "Minimum",
@@ -771,8 +771,29 @@
       "Driver bata, food & accommodation"
     ],
     "addOns": [],
-    "brandingStatus": "Fabrication cost applicable",
-    "locationCharges": []
+    "brandingStatus": "Fabrication Cost Applicable",
+    "locationCharges": [
+      {
+        "label": "Fabrication Cost",
+        "general": "₹10,000",
+        "kerala": "₹20,000"
+      },
+      {
+        "label": "RTO Permission",
+        "chennai": "₹10,000",
+        "rotn": "₹10,000",
+        "kerala": "Based on the design",
+        "andhara": "₹20,000",
+        "telungana": "₹20,000",
+        "karnataka": "₹20,000"
+      },
+      {
+        "label": "Promoter",
+        "Tamilnadu": "₹1,300",
+        "Kerala": "₹1,850",
+        "otherStates": "₹1,700"
+      }
+    ]
   },
   {
     "id": 10,
@@ -794,11 +815,15 @@
       },
       {
         "label": "Extra KM",
-        "value": "Rs. 12/km"
+        "value": "Rs. 24/km"
       },
       {
         "label": "Minimum",
         "value": "10 days"
+      },
+      {
+        "label": "Extra Hours",
+        "value": "₹750 / Hour"
       }
     ],
     "included": [
@@ -806,8 +831,29 @@
       "Driver bata, food & accommodation"
     ],
     "addOns": [],
-    "brandingStatus": "Fabrication cost applicable",
-    "locationCharges": []
+    "brandingStatus": "Fabrication Cost Applicable",
+    "locationCharges": [
+      {
+        "label": "Fabrication Cost",
+        "general": "₹10,000",
+        "kerala": "₹20,000"
+      },
+      {
+        "label": "RTO Permission",
+        "chennai": "₹10,000",
+        "rotn": "₹10,000",
+        "kerala": "Based on the design",
+        "andhara": "₹20,000",
+        "telungana": "₹20,000",
+        "karnataka": "₹20,000"
+      },
+      {
+        "label": "Promoter",
+        "Tamilnadu": "₹1,300",
+        "Kerala": "₹1,850",
+        "otherStates": "₹1,700"
+      }
+    ]
   },
   {
     "id": 11,
@@ -829,11 +875,15 @@
       },
       {
         "label": "Extra KM",
-        "value": "Rs. 12/km"
+        "value": "Rs. 24/km"
       },
       {
         "label": "Minimum",
         "value": "10 days"
+      },
+      {
+        "label": "Extra Hours",
+        "value": "₹750 / Hour"
       }
     ],
     "included": [
@@ -841,8 +891,29 @@
       "Driver bata, food & accommodation"
     ],
     "addOns": [],
-    "brandingStatus": "Fabrication cost applicable",
-    "locationCharges": []
+    "brandingStatus": "Fabrication Cost Applicable",
+    "locationCharges": [
+      {
+        "label": "Fabrication Cost",
+        "general": "₹20,000",
+        "kerala": "₹30,000"
+      },
+      {
+        "label": "RTO Permission",
+        "chennai": "₹20,000",
+        "rotn": "₹20,000",
+        "kerala": "Based on the design",
+        "andhara": "₹35,000",
+        "telungana": "₹35,000",
+        "karnataka": "₹35,000"
+      },
+      {
+        "label": "Promoter",
+        "Tamilnadu": "₹1,300",
+        "Kerala": "₹1,850",
+        "otherStates": "₹1,700"
+      }
+    ]
   },
   {
     "promoterCharges": [
