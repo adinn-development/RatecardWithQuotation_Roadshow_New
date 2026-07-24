@@ -5292,10 +5292,7 @@ export default function RoadshowQO() {
 
                 <small>
                   {isInnovativeFabricationVehicle
-                    ? `Default: ${region === "kerala"
-                      ? formatPrice(30000)
-                      : formatPrice(10000)
-                    }. Editable based on the approved design.`
+                    ? `Editable based on the approved design.`
                     : "Auto-loaded from selected vehicle and region."}
                 </small>
 
