@@ -775,8 +775,8 @@
     "locationCharges": [
       {
         "label": "Fabrication Cost",
-        "general": "₹10,000",
-        "kerala": "₹20,000"
+        "general": "₹0",
+        "kerala": "₹0"
       },
       {
         "label": "RTO Permission",
@@ -835,8 +835,8 @@
     "locationCharges": [
       {
         "label": "Fabrication Cost",
-        "general": "₹10,000",
-        "kerala": "₹20,000"
+        "general": "₹0",
+        "kerala": "₹0"
       },
       {
         "label": "RTO Permission",
@@ -895,8 +895,8 @@
     "locationCharges": [
       {
         "label": "Fabrication Cost",
-        "general": "₹20,000",
-        "kerala": "₹30,000"
+        "general": "₹0",
+        "kerala": "₹0"
       },
       {
         "label": "RTO Permission",

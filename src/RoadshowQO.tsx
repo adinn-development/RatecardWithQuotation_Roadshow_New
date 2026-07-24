@@ -55,7 +55,7 @@ const PREPARED_BY_DEFAULTS = {
   gstNumber: DEFAULT_PREPARED_BY_GST,
 };
 
-const ENABLE_PREFILLED_QUOTATION_VALUES = false; // set true to auto-load the sample quotation values below
+const ENABLE_PREFILLED_QUOTATION_VALUES = true; // set true to auto-load the sample quotation values below
 
 const PREFILLED_QUOTATION_VALUES = {
   clientDetails: {
@@ -1339,6 +1339,11 @@ export default function RoadshowQO() {
     null,
   );
 
+  //COST REVIEW CONFIRMATION ADDED FOR INNOVATIVE MODEL (FABRICATION/RTO)
+  const [showCostReviewModal, setShowCostReviewModal] = useState(false);
+  const commercialPricingSectionRef = useRef<HTMLElement | null>(null);
+  //COST REVIEW CONFIRMATION ADDED FOR INNOVATIVE MODEL (FABRICATION/RTO)
+
   const displayLogo = uploadedLogo || LOGO_SRC;
   const renderLogoSrc = pdfLogoSrc || displayLogo;
 
@@ -1363,6 +1368,31 @@ export default function RoadshowQO() {
     setPdfError(message);
     scrollToTopMessage();
   };
+
+  //COST REVIEW CONFIRMATION ADDED FOR INNOVATIVE MODEL (FABRICATION/RTO/PROMOTER)
+  const scrollToCommercialPricingSection = () => {
+    window.setTimeout(() => {
+      commercialPricingSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 100);
+  };
+
+  const focusFabricationCostInput = () => {
+    window.setTimeout(() => {
+      const fabricationInput = document.getElementById(
+        "innovative-fabrication-cost",
+      ) as HTMLInputElement | null;
+
+      fabricationInput?.focus();
+      fabricationInput?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 150);
+  };
+  //COST REVIEW CONFIRMATION ADDED FOR INNOVATIVE MODEL (FABRICATION/RTO/PROMOTER)
 
   const fetchNextQuotationNumber = async () => {
     try {
@@ -3898,31 +3928,11 @@ export default function RoadshowQO() {
     }
   };
 
-  const handleDownloadPdf = async () => {
-    if (isGeneratingPdf || isSubmittingApproval) return;
-    //VALIDATION ADDED FOR FABRICATION COST
-    if (!validateRequiredFabricationCost()) {
-      return;
-    }
-    //VALIDATION ADDED FOR FABRICATION COST
-
-    const normalizedQuoteValues = normalizeMinimumFieldsForDownload();
-
-    if (
-      (normalizedQuoteValues.brandingCostDiscount || 0) > 0 ||
-      (normalizedQuoteValues.rtoPermissionDiscount || 0) > 0
-    ) {
-      showTopMessage(
-        "This quotation has Branding/RTO discount and must be submitted for approval before download.",
-      );
-      return;
-    }
-
-    if (!clientDetails.companyName.trim()) {
-      showTopMessage("Client company name is required before downloading PDF.");
-      return;
-    }
-
+  //COST REVIEW CONFIRMATION ADDED FOR INNOVATIVE MODEL (FABRICATION/RTO/PROMOTER)
+  // Extracted so the same "create quotation -> generate PDF -> download" flow
+  // can run either immediately (non Innovative Model) or after the staff
+  // confirms the Fabrication/RTO/Promoter cost in the review modal.
+  const runDownloadPdfWithValues = async (normalizedQuoteValues: any) => {
     try {
       setPdfError("");
       setIsGeneratingPdf(true);
@@ -3963,6 +3973,68 @@ export default function RoadshowQO() {
       setIsGeneratingPdf(false);
     }
   };
+  //COST REVIEW CONFIRMATION ADDED FOR INNOVATIVE MODEL (FABRICATION/RTO/PROMOTER)
+
+  const handleDownloadPdf = async () => {
+    if (isGeneratingPdf || isSubmittingApproval) return;
+    //VALIDATION ADDED FOR FABRICATION COST
+    if (!validateRequiredFabricationCost()) {
+      return;
+    }
+    //VALIDATION ADDED FOR FABRICATION COST
+
+    const normalizedQuoteValues = normalizeMinimumFieldsForDownload();
+
+    if (
+      (normalizedQuoteValues.brandingCostDiscount || 0) > 0 ||
+      (normalizedQuoteValues.rtoPermissionDiscount || 0) > 0
+    ) {
+      showTopMessage(
+        "This quotation has Branding/RTO discount and must be submitted for approval before download.",
+      );
+      return;
+    }
+
+    if (!clientDetails.companyName.trim()) {
+      showTopMessage("Client company name is required before downloading PDF.");
+      return;
+    }
+
+    //COST REVIEW CONFIRMATION ADDED FOR INNOVATIVE MODEL (FABRICATION/RTO)
+    // Innovative Model fabrication/RTO costs are design-dependent, so staff
+    // must explicitly review (and can still edit) them in the popup before
+    // the quotation is locked into a downloaded PDF.
+    if (isInnovativeFabricationVehicle) {
+      setShowCostReviewModal(true);
+      scrollToCommercialPricingSection();
+      return;
+    }
+    //COST REVIEW CONFIRMATION ADDED FOR INNOVATIVE MODEL (FABRICATION/RTO)
+
+    await runDownloadPdfWithValues(normalizedQuoteValues);
+  };
+
+  //COST REVIEW CONFIRMATION ADDED FOR INNOVATIVE MODEL (FABRICATION/RTO)
+  // Re-validates and re-normalizes at confirm time (not when the popup first
+  // opened) so any edits made to Fabrication Cost / RTO Permission inside the
+  // popup are picked up before the quotation is saved and the PDF is built.
+  const handleConfirmCostAndDownload = async () => {
+    if (!validateRequiredFabricationCost()) {
+      return;
+    }
+
+    const normalizedQuoteValues = normalizeMinimumFieldsForDownload();
+
+    setShowCostReviewModal(false);
+
+    await runDownloadPdfWithValues(normalizedQuoteValues);
+  };
+
+  const handleRejectCostAndEdit = () => {
+    setShowCostReviewModal(false);
+    focusFabricationCostInput();
+  };
+  //COST REVIEW CONFIRMATION ADDED FOR INNOVATIVE MODEL (FABRICATION/RTO)
 
   const handleDownloadJson = async () => {
     const response = await fetch(`${VEHICLES_JSON_URL}?v=${Date.now()}`, {
@@ -4049,6 +4121,94 @@ export default function RoadshowQO() {
           </div>
         </div>
       )}
+
+      {/* COST REVIEW CONFIRMATION ADDED FOR INNOVATIVE MODEL (FABRICATION/RTO) */}
+      {showCostReviewModal && (
+        <div
+          className="qoCostConfirmBackdrop noPrint"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="qoCostConfirmTitle"
+        >
+          <div className="qoCostConfirmModal">
+            <h3 id="qoCostConfirmTitle">Confirm Cost Before Download</h3>
+            <p>
+              This is an Innovative Model vehicle. Please review (and edit if
+              needed) the Fabrication Cost and RTO Permission below before the
+              proposal PDF is generated.
+            </p>
+
+            <label className="qoCostConfirmField">
+              Fabrication Cost ({selectedRegionLabel})
+              <div className="moneyInput">
+                <span>Rs.</span>
+                <input
+                  id="innovative-fabrication-cost-modal"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={pricingDetails.brandingCost}
+                  onChange={(event) =>
+                    handlePricingChange("brandingCost", event.target.value)
+                  }
+                  onBlur={() => {
+                    if (Number(pricingDetails.brandingCost || 0) <= 0) {
+                      setFabricationCostError(
+                        "Fabrication Cost is required. Please enter an amount greater than zero.",
+                      );
+                    }
+                  }}
+                />
+              </div>
+              {fabricationCostError && (
+                <small className="qoCostConfirmFieldError">
+                  {fabricationCostError}
+                </small>
+              )}
+            </label>
+
+            <label className="qoCostConfirmField">
+              RTO Permission ({selectedRegionLabel})
+              <div className="moneyInput">
+                <span>Rs.</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={pricingDetails.rtoPermission}
+                  onChange={(event) =>
+                    handlePricingChange("rtoPermission", event.target.value)
+                  }
+                />
+              </div>
+            </label>
+
+            <p className="qoCostConfirmQuestion">
+              Do you want to proceed with this cost?
+            </p>
+
+            <div className="qoCostConfirmActions">
+              <button
+                type="button"
+                className="qoCostConfirmNoBtn"
+                onClick={handleRejectCostAndEdit}
+              >
+                No, Edit Cost
+              </button>
+
+              <button
+                type="button"
+                className="qoCostConfirmYesBtn"
+                onClick={handleConfirmCostAndDownload}
+                disabled={isGeneratingPdf}
+              >
+                {isGeneratingPdf ? "Preparing PDF..." : "Yes, Proceed"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* COST REVIEW CONFIRMATION ADDED FOR INNOVATIVE MODEL (FABRICATION/RTO) */}
 
       {(vehiclesError || pdfError) && (
         <div
@@ -4859,6 +5019,7 @@ export default function RoadshowQO() {
                     ? " · Based on the design"
                     : ""}
                 </small>
+
               </div>
 
               <div className="qoSelectCard" style={{ cursor: "default" }}>
@@ -4880,10 +5041,29 @@ export default function RoadshowQO() {
                 <span>{formatPrice(pricingDetails.promoterCost)} / day</span>
                 <small>{selectedRegionLabel}</small>
               </div>
+
             </div>
+            {isInnovativeFabricationVehicle && (
+              <p
+                style={{
+                  margin: "8px 0 0",
+                  color: "#92400e",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  lineHeight: 1.4,
+                }}
+              >
+                Note: This is an estimated cost. The final fabrication cost may vary
+                based on the approved design.
+              </p>
+            )}
           </section>
 
-          <section className="qoCard">
+          <section
+            className="qoCard"
+            id="qoCommercialPricingSection"
+            ref={commercialPricingSectionRef}
+          >
             <div className="qoSectionHeader">
               <div>
                 <h2>
