@@ -7,6 +7,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./RoadshowQO.css";
 import "./RoadshowQOWatermark.css";
 import { Link, useNavigate } from "react-router-dom";
+import { UP_DOWN_FREE_KM_LIMIT } from "../src/baseUrl.tsx";
 const LOGO_SRC = "/adinn-logo.png";
 
 // const VEHICLES_JSON_URL =
@@ -30,8 +31,17 @@ const CATEGORY_ORDER = ["Flex Branding", "Hybrid LED + Flex", "LED Vehicles", "I
 const LED_TV_ADDON_RATE_PER_DAY = 350;
 const POWER_BACKUP_ADDON_RATE_PER_DAY = 650;
 const RTO_PERMISSION_VALIDITY_DAYS = 30;
-const UP_DOWN_FREE_KM_LIMIT = 200;
+// UP_DOWN_FREE_KM_LIMIT now lives in ./upDownChargeConfig.ts (single place to change it).
 const UP_DOWN_CHARGE_DAYS_THRESHOLD = 25;
+
+// Up & Down charges are billed only for km beyond UP_DOWN_FREE_KM_LIMIT
+// (e.g. 201 km with a 200 km free limit charges for 1 km, not 201).
+const getChargeableUpDownKm = (upDownKmValue: number) => {
+  const safeUpDownKm = Math.max(Number(upDownKmValue) || 0, 0);
+  return safeUpDownKm > UP_DOWN_FREE_KM_LIMIT
+    ? safeUpDownKm - UP_DOWN_FREE_KM_LIMIT
+    : 0;
+};
 
 const ENABLE_DIGITAL_SIGNATURE = false; // set true to show and use the digital signature upload/crop/signatory flow
 const ENABLE_QUOTATION_WATERMARK = false; // set false to hide the logo watermark in preview, print, and generated PDF
@@ -1524,8 +1534,12 @@ export default function RoadshowQO() {
     upDownKm > UP_DOWN_FREE_KM_LIMIT &&
     upDownRatePerKm > 0;
 
+  const chargeableUpDownKm = shouldApplyUpDownCharge
+    ? getChargeableUpDownKm(upDownKm)
+    : 0;
+
   const calculatedUpDownChargePerVehicle = shouldApplyUpDownCharge
-    ? upDownKm * upDownRatePerKm
+    ? chargeableUpDownKm * upDownRatePerKm
     : 0;
 
   const calculatedUpDownChargeTotal =
@@ -1837,8 +1851,11 @@ export default function RoadshowQO() {
       daysValue < UP_DOWN_CHARGE_DAYS_THRESHOLD &&
       effectiveUpDownKm > UP_DOWN_FREE_KM_LIMIT &&
       effectiveUpDownRatePerKm > 0;
+    const effectiveChargeableUpDownKm = shouldChargeUpDown
+      ? getChargeableUpDownKm(effectiveUpDownKm)
+      : 0;
     const effectiveUpDownChargePerVehicle = shouldChargeUpDown
-      ? effectiveUpDownKm * effectiveUpDownRatePerKm
+      ? effectiveChargeableUpDownKm * effectiveUpDownRatePerKm
       : 0;
     const effectiveBrandingCostDiscountValue = canShowBrandingCostDiscount
       ? brandingCostDiscountValue
@@ -1969,11 +1986,11 @@ export default function RoadshowQO() {
     if (effectiveUpDownChargePerVehicle > 0) {
       items.push({
         label: "Up & Down Charges",
-        description: `(campaign < ${UP_DOWN_CHARGE_DAYS_THRESHOLD} days, Distance > ${UP_DOWN_FREE_KM_LIMIT} km)`,
+        description: `(campaign < ${UP_DOWN_CHARGE_DAYS_THRESHOLD} days, Distance > ${UP_DOWN_FREE_KM_LIMIT} km, billed for km beyond ${UP_DOWN_FREE_KM_LIMIT})`,
         rateLabel: `${formatPrice(effectiveUpDownRatePerKm)} / km`,
         periodLabel: "One-time",
         quantityLabel: `${quantityValue}`,
-        formulaLabel: `${formatPrice(effectiveUpDownRatePerKm)} × ${effectiveUpDownKm} km × ${quantityValue} vehicle(s)`,
+        formulaLabel: `${formatPrice(effectiveUpDownRatePerKm)} × ${effectiveChargeableUpDownKm} km × ${quantityValue} vehicle(s)`,
         amount: effectiveUpDownChargePerVehicle * quantityValue,
         actualRate: effectiveUpDownRatePerKm,
         finalRate: effectiveUpDownChargePerVehicle,
@@ -3657,7 +3674,7 @@ export default function RoadshowQO() {
       normalizedDays < UP_DOWN_CHARGE_DAYS_THRESHOLD &&
         normalizedUpDownKm > UP_DOWN_FREE_KM_LIMIT &&
         upDownRatePerKm > 0
-        ? normalizedUpDownKm * upDownRatePerKm
+        ? getChargeableUpDownKm(normalizedUpDownKm) * upDownRatePerKm
         : 0;
 
     const normalizedVehicleRate =
@@ -4948,11 +4965,15 @@ export default function RoadshowQO() {
                   onBlur={handleUpDownKmBlur}
                 />
                 <small>
-                  Only numbers allowed. Charges apply only when campaign days are
+                  Only numbers allowed.
+                   {/* Charges apply only when campaign days are
                   below {UP_DOWN_CHARGE_DAYS_THRESHOLD} and up & down km is above
                   {" "}
-                  {UP_DOWN_FREE_KM_LIMIT} km. Rate is taken from the selected
-                  vehicle Extra KM value: {selectedPackageDetails.extraKm || "Not available"}.
+                  {UP_DOWN_FREE_KM_LIMIT} km. Only the km beyond {UP_DOWN_FREE_KM_LIMIT}
+                  {" "}
+                  is charged (e.g. {UP_DOWN_FREE_KM_LIMIT + 1} km bills for 1 km).
+                  Rate is taken from the selected
+                  vehicle Extra KM value: {selectedPackageDetails.extraKm || "Not available"}. */}
                 </small>
               </label>
 
@@ -4971,7 +4992,9 @@ export default function RoadshowQO() {
                     />
                   </div>
                   <small>
-                    Auto: {upDownKm} km × {formatPrice(upDownRatePerKm)} =
+                    Auto: {upDownKm} km − {UP_DOWN_FREE_KM_LIMIT} km free =
+                    {" "}
+                    {chargeableUpDownKm} chargeable km × {formatPrice(upDownRatePerKm)} =
                     {" "}
                     {formatPrice(calculatedUpDownChargePerVehicle)} / vehicle.
                     {" "}
